@@ -1,22 +1,49 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Cocoon
+
+An app that effortlessly transforms documents into smart, accessible insights. Upload or scan anything, and it quietly organizes the info, chats with you to reveal what matters, and nudges you when something needs attention—all with a clever, behind-the-scenes touch.
+
+## Features
+
+- Document upload and OCR processing
+- Local-first storage for privacy
+- Smart document organization with folders and tags
+- Chat interface for document queries
+- Expiry date notifications
+- Mobile-responsive design
+
+## Tech Stack
+
+- Next.js 14 with App Router
+- TypeScript
+- Tailwind CSS
+- MongoDB
+- IndexedDB for local storage
+- Tesseract.js for OCR
 
 ## Getting Started
 
-First, run the development server:
+1. Clone the repository
+2. Install dependencies:
+   ```bash
+   npm install
+   ```
+3. Create a `.env.local` file with:
+   ```
+   MONGODB_URI=mongodb://localhost:27017/cocoon
+   ```
+4. Run the development server:
+   ```bash
+   npm run dev
+   ```
+5. Open [http://localhost:3000](http://localhost:3000) in your browser
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
-```
+## Development Status
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
-
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+Currently in active development. Basic features implemented:
+- Project structure and routing
+- Document upload interface
+- Responsive layout with sidebar
+- Basic document organization structure
 
 This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
 
