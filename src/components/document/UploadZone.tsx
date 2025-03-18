@@ -1,116 +1,99 @@
 'use client';
 
-import { useState, useCallback } from 'react';
-import { useRouter } from 'next/navigation';
-import { DocumentArrowUpIcon } from '@heroicons/react/24/outline';
+import { useCallback, useState } from 'react';
+import { useDropzone } from 'react-dropzone';
+import { DocumentProcessor } from '@/lib/services/documentProcessor';
+import type { ProcessingProgress } from '@/lib/services/documentProcessor';
+import { getDB } from '@/lib/storage/indexeddb';
+import { ArrowUpTrayIcon } from '@heroicons/react/24/outline';
 
-const MAX_FILE_SIZE = 20 * 1024 * 1024; // 20MB
-const ALLOWED_FILE_TYPES = ['application/pdf', 'image/jpeg', 'image/png'];
-
-export default function UploadZone() {
-  const router = useRouter();
-  const [isDragging, setIsDragging] = useState(false);
+export function UploadZone() {
+  const [isUploading, setIsUploading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [progress, setProgress] = useState<ProcessingProgress | null>(null);
 
-  const validateFile = (file: File): boolean => {
-    if (!ALLOWED_FILE_TYPES.includes(file.type)) {
-      setError('File type not supported. Please upload a PDF, JPG, or PNG file.');
-      return false;
-    }
+  const onDrop = useCallback(async (acceptedFiles: File[]) => {
+    if (acceptedFiles.length === 0) return;
 
-    if (file.size > MAX_FILE_SIZE) {
-      setError('File size too large. Maximum size is 20MB.');
-      return false;
-    }
-
-    return true;
-  };
-
-  const handleFile = async (file: File) => {
+    setIsUploading(true);
     setError(null);
-    
-    if (!validateFile(file)) {
-      return;
-    }
+    setProgress(null);
 
-    // TODO: Implement file processing and storage
-    console.log('Processing file:', file.name);
-  };
+    try {
+      const processor = new DocumentProcessor();
+      const db = await getDB();
 
-  const onDrop = useCallback(
-    (e: React.DragEvent<HTMLDivElement>) => {
-      e.preventDefault();
-      setIsDragging(false);
-
-      const file = e.dataTransfer.files[0];
-      if (file) {
-        handleFile(file);
+      for (const file of acceptedFiles) {
+        const processedDoc = await processor.processDocument(file, (progress) => {
+          setProgress(progress);
+        });
+        await db.put('documents', processedDoc);
       }
-    },
-    []
-  );
 
-  const onDragOver = useCallback((e: React.DragEvent<HTMLDivElement>) => {
-    e.preventDefault();
-    setIsDragging(true);
-  }, []);
-
-  const onDragLeave = useCallback((e: React.DragEvent<HTMLDivElement>) => {
-    e.preventDefault();
-    setIsDragging(false);
-  }, []);
-
-  const onFileSelect = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (file) {
-      handleFile(file);
+      // Redirect to documents page after successful upload
+      window.location.href = '/documents';
+    } catch (err) {
+      console.error('Error processing document:', err);
+      setError(err instanceof Error ? err.message : 'Failed to process document');
+    } finally {
+      setIsUploading(false);
+      setProgress(null);
     }
   }, []);
+
+  const { getRootProps, getInputProps, isDragActive } = useDropzone({
+    onDrop,
+    accept: {
+      'image/*': ['.png', '.jpg', '.jpeg'],
+      'application/pdf': ['.pdf'],
+    },
+  });
 
   return (
-    <div className="mx-auto max-w-3xl">
-      <div
-        className={`relative rounded-lg border-2 border-dashed p-12 text-center ${
-          isDragging
-            ? 'border-indigo-600 bg-indigo-50'
-            : 'border-gray-300 hover:border-gray-400'
-        }`}
-        onDrop={onDrop}
-        onDragOver={onDragOver}
-        onDragLeave={onDragLeave}
-      >
-        <input
-          id="file-upload"
-          name="file-upload"
-          type="file"
-          className="sr-only"
-          accept={ALLOWED_FILE_TYPES.join(',')}
-          onChange={onFileSelect}
-        />
-
-        <div className="text-center">
-          <DocumentArrowUpIcon
-            className="mx-auto h-12 w-12 text-gray-400"
-            aria-hidden="true"
-          />
-          <div className="mt-4 flex text-sm leading-6 text-gray-600">
-            <label
-              htmlFor="file-upload"
-              className="relative cursor-pointer rounded-md bg-white font-semibold text-indigo-600 focus-within:outline-none focus-within:ring-2 focus-within:ring-indigo-600 focus-within:ring-offset-2 hover:text-indigo-500"
-            >
-              <span>Upload a file</span>
-            </label>
-            <p className="pl-1">or drag and drop</p>
+    <div
+      {...getRootProps()}
+      className={`relative flex min-h-[200px] cursor-pointer items-center justify-center rounded-lg border-2 border-dashed p-12 text-center hover:bg-gray-50 ${
+        isDragActive ? 'border-indigo-600 bg-indigo-50' : 'border-gray-300'
+      }`}
+    >
+      <input {...getInputProps()} />
+      <div>
+        {isUploading ? (
+          <div className="text-center">
+            {progress ? (
+              <div className="space-y-4">
+                <div className="text-center">
+                  <h3 className="text-sm font-semibold text-gray-900">
+                    {progress.message}
+                  </h3>
+                  <div className="mt-2 h-1.5 w-full rounded-full bg-gray-200">
+                    <div
+                      className="h-1.5 rounded-full bg-indigo-600 transition-all duration-300"
+                      style={{ width: `${progress.progress}%` }}
+                    />
+                  </div>
+                </div>
+              </div>
+            ) : (
+              <>
+                <div className="inline-flex h-8 w-8 animate-spin rounded-full border-4 border-solid border-current border-r-transparent align-[-0.125em] motion-reduce:animate-[spin_1.5s_linear_infinite]" />
+                <p className="mt-4 text-sm text-gray-500">Processing...</p>
+              </>
+            )}
           </div>
-          <p className="text-xs leading-5 text-gray-600">
-            PDF, JPG or PNG up to 20MB
-          </p>
-        </div>
-
-        {error && (
-          <div className="mt-4 text-sm text-red-600" role="alert">
-            {error}
-          </div>
+        ) : (
+          <>
+            <ArrowUpTrayIcon className="mx-auto h-12 w-12 text-gray-400" />
+            <p className="mt-4 text-sm font-semibold text-gray-900">
+              Drop your files here or click to upload
+            </p>
+            <p className="mt-2 text-xs text-gray-500">PDF, PNG, JPG up to 10MB</p>
+            {error && (
+              <p className="mt-2 text-sm text-red-600" role="alert">
+                {error}
+              </p>
+            )}
+          </>
         )}
       </div>
     </div>

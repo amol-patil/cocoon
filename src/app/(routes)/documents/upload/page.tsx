@@ -1,4 +1,6 @@
-import UploadZone from '@/components/document/UploadZone';
+'use client';
+
+import { UploadZone } from '@/components/document/UploadZone';
 import Link from 'next/link';
 import { ArrowLeftIcon } from '@heroicons/react/24/outline';
 

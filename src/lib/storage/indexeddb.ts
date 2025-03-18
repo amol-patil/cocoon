@@ -1,20 +1,14 @@
 import { openDB, DBSchema, IDBPDatabase } from 'idb';
+import type { ProcessedDocument } from '../services/documentProcessor';
 
 interface CocoonDB extends DBSchema {
   documents: {
     key: string;
-    value: {
-      id: string;
-      name: string;
-      type: string;
-      content: string;
-      ocrText: string;
-      tags: string[];
-      folderId?: string;
-      createdAt: Date;
-      updatedAt: Date;
+    value: ProcessedDocument;
+    indexes: {
+      'by-created': Date;
+      'by-folder': string;
     };
-    indexes: { 'by-date': Date };
   };
   folders: {
     key: string;
@@ -28,18 +22,18 @@ interface CocoonDB extends DBSchema {
   };
 }
 
-let dbPromise: Promise<IDBPDatabase<CocoonDB>>;
+let db: IDBPDatabase<CocoonDB> | null = null;
 
-export const initDB = async () => {
-  if (!dbPromise) {
-    dbPromise = openDB<CocoonDB>('cocoon-db', 1, {
+export async function getDB(): Promise<IDBPDatabase<CocoonDB>> {
+  if (!db) {
+    db = await openDB<CocoonDB>('cocoon', 1, {
       upgrade(db) {
         // Create the documents store
         if (!db.objectStoreNames.contains('documents')) {
           const documentStore = db.createObjectStore('documents', {
             keyPath: 'id',
           });
-          documentStore.createIndex('by-date', 'createdAt');
+          documentStore.createIndex('by-created', 'createdAt');
         }
 
         // Create the folders store
@@ -51,17 +45,7 @@ export const initDB = async () => {
       },
     });
   }
-  return dbPromise;
-};
+  return db;
+}
 
-export const getDB = () => {
-  if (!dbPromise) {
-    throw new Error('Database not initialized. Call initDB first.');
-  }
-  return dbPromise;
-};
-
-export default {
-  initDB,
-  getDB,
-}; 
+export default getDB; 

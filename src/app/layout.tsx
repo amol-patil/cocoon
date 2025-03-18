@@ -1,6 +1,9 @@
 import type { Metadata } from "next";
-import RootLayout from "@/components/layout/RootLayout";
+import { Inter } from "next/font/google";
 import "./globals.css";
+import { DatabaseProvider } from "@/components/providers/DatabaseProvider";
+
+const inter = Inter({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
   title: "Cocoon - Document Insights",
@@ -14,8 +17,8 @@ export default function Layout({
 }) {
   return (
     <html lang="en">
-      <body>
-        <RootLayout>{children}</RootLayout>
+      <body className={inter.className}>
+        <DatabaseProvider>{children}</DatabaseProvider>
       </body>
     </html>
   );
