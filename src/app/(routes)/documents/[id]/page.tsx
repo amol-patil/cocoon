@@ -7,8 +7,7 @@ import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import { getDB } from '@/lib/storage/indexeddb';
 import { DocumentProcessor } from '@/lib/services/documentProcessor';
-import type { ProcessedDocument } from '@/lib/services/documentProcessor';
-import type { OCRProgress } from '@/lib/services/documentProcessor';
+import type { ProcessedDocument, ProcessingProgress } from '@/lib/services/documentProcessor';
 
 function base64ToBlob(base64: string): Blob {
   // Get the base64 data part (remove data:image/jpeg;base64, etc.)
@@ -32,8 +31,10 @@ export default function DocumentDetailPage({ params }: { params: Promise<{ id: s
   const [error, setError] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
   const [processing, setProcessing] = useState(false);
-  const [ocrProgress, setOcrProgress] = useState<OCRProgress | null>(null);
+  const [progress, setProgress] = useState<ProcessingProgress | null>(null);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [isEditing, setIsEditing] = useState(false);
+  const [editedMetadata, setEditedMetadata] = useState<Record<string, string>>({});
 
   useEffect(() => {
     const loadDocument = async () => {
@@ -44,6 +45,7 @@ export default function DocumentDetailPage({ params }: { params: Promise<{ id: s
           throw new Error('Document not found');
         }
         setDocument(doc);
+        setEditedMetadata(doc.metadata || {});
       } catch (err) {
         console.error('Failed to load document:', err);
         setError(err instanceof Error ? err.message : 'Failed to load document');
@@ -66,6 +68,81 @@ export default function DocumentDetailPage({ params }: { params: Promise<{ id: s
       console.error('Failed to delete document:', err);
       setError(err instanceof Error ? err.message : 'Failed to delete document');
     }
+  };
+
+  const handleReprocess = async () => {
+    if (!document) return;
+
+    try {
+      setProcessing(true);
+      setProgress({
+        status: 'loading',
+        progress: 0,
+        message: 'Converting document...',
+      });
+
+      // Convert base64 back to file
+      const blob = await base64ToBlob(document.content);
+      const file = new File([blob], document.name, { type: document.type });
+
+      console.log('Reprocessing document:', {
+        fileName: file.name,
+        fileType: file.type,
+        fileSize: file.size
+      });
+
+      // Process with Gemini
+      const processor = new DocumentProcessor();
+      const processedDoc = await processor.processDocument(
+        file,
+        'Document', // Default to generic document type for reprocessing
+        setProgress
+      );
+
+      console.log('Document reprocessed:', {
+        text: processedDoc.text?.substring(0, 100),
+        metadata: processedDoc.metadata
+      });
+
+      // Update the UI
+      setDocument(processedDoc);
+      setProcessing(false);
+      setProgress({
+        status: 'complete',
+        progress: 100,
+        message: 'Document processed successfully',
+      });
+    } catch (error) {
+      console.error('Failed to reprocess document:', error);
+      setError(error instanceof Error ? error.message : 'Failed to process document');
+      setProcessing(false);
+      setProgress(null);
+    }
+  };
+
+  const handleSaveChanges = async () => {
+    if (!document) return;
+
+    try {
+      const db = await getDB();
+      const updatedDoc = {
+        ...document,
+        metadata: editedMetadata
+      };
+      await db.put('documents', updatedDoc);
+      setDocument(updatedDoc);
+      setIsEditing(false);
+    } catch (err) {
+      console.error('Failed to save changes:', err);
+      setError(err instanceof Error ? err.message : 'Failed to save changes');
+    }
+  };
+
+  const handleMetadataChange = (key: string, value: string) => {
+    setEditedMetadata(prev => ({
+      ...prev,
+      [key]: value
+    }));
   };
 
   if (loading) {
@@ -235,82 +312,111 @@ export default function DocumentDetailPage({ params }: { params: Promise<{ id: s
             </div>
           </div>
 
-          {/* OCR Results */}
+          {/* Extracted Information */}
           <div>
             <div className="flex items-center justify-between">
-              <h3 className="text-lg font-medium text-gray-900">Extracted Text</h3>
-              {document.text && (
-                <button
-                  onClick={() => {
-                    navigator.clipboard.writeText(document.text);
-                    setCopied(true);
-                    setTimeout(() => setCopied(false), 2000);
-                  }}
-                  className="flex items-center space-x-1 rounded-md bg-white px-2 py-1 text-sm text-gray-600 hover:bg-gray-50"
-                >
-                  {copied ? (
-                    <CheckIcon className="h-4 w-4 text-green-500" />
-                  ) : (
-                    <ClipboardDocumentIcon className="h-4 w-4" />
-                  )}
-                  <span>{copied ? 'Copied!' : 'Copy'}</span>
-                </button>
-              )}
+              <h3 className="text-lg font-medium text-gray-900">Extracted Information</h3>
+              <div className="flex items-center space-x-2">
+                {document.text && (
+                  <button
+                    onClick={() => {
+                      navigator.clipboard.writeText(document.text);
+                      setCopied(true);
+                      setTimeout(() => setCopied(false), 2000);
+                    }}
+                    className="flex items-center space-x-1 rounded-md bg-white px-2 py-1 text-sm text-gray-600 hover:bg-gray-50"
+                  >
+                    {copied ? (
+                      <CheckIcon className="h-4 w-4 text-green-500" />
+                    ) : (
+                      <ClipboardDocumentIcon className="h-4 w-4" />
+                    )}
+                    <span>{copied ? 'Copied!' : 'Copy'}</span>
+                  </button>
+                )}
+                {document.metadata && Object.keys(document.metadata).length > 0 && (
+                  <>
+                    {isEditing ? (
+                      <>
+                        <button
+                          onClick={handleSaveChanges}
+                          className="flex items-center space-x-1 rounded-md bg-indigo-600 px-2 py-1 text-sm text-white hover:bg-indigo-700"
+                        >
+                          <CheckIcon className="h-4 w-4" />
+                          <span>Save</span>
+                        </button>
+                        <button
+                          onClick={() => {
+                            setIsEditing(false);
+                            setEditedMetadata(document.metadata || {});
+                          }}
+                          className="flex items-center space-x-1 rounded-md bg-white px-2 py-1 text-sm text-gray-600 hover:bg-gray-50"
+                        >
+                          <span>Cancel</span>
+                        </button>
+                      </>
+                    ) : (
+                      <button
+                        onClick={() => setIsEditing(true)}
+                        className="flex items-center space-x-1 rounded-md bg-white px-2 py-1 text-sm text-gray-600 hover:bg-gray-50"
+                      >
+                        <span>Edit</span>
+                      </button>
+                    )}
+                  </>
+                )}
+              </div>
             </div>
             <div className="mt-2 rounded-md bg-gray-50 p-4">
               {document.text ? (
-                <p className="whitespace-pre-wrap text-sm text-gray-700">{document.text}</p>
+                <>
+                  {/* Metadata Section */}
+                  {document.metadata && Object.keys(document.metadata).length > 0 && (
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      {Object.entries(isEditing ? editedMetadata : document.metadata)
+                        .filter(([key]) => key !== 'text') // Exclude the text field
+                        .map(([key, value]) => (
+                          <div key={key} className="bg-white p-4 rounded-lg shadow">
+                            <div className="text-sm font-medium text-gray-500 capitalize">
+                              {key.replace(/_/g, ' ')}
+                            </div>
+                            {isEditing ? (
+                              <textarea
+                                value={value as string}
+                                onChange={(e) => handleMetadataChange(key, e.target.value)}
+                                className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
+                                rows={3}
+                              />
+                            ) : (
+                              <div className="mt-1 text-sm text-gray-900 whitespace-pre-wrap">
+                                {value}
+                              </div>
+                            )}
+                          </div>
+                        ))}
+                    </div>
+                  )}
+                </>
               ) : (
                 <div className="flex flex-col items-center justify-center py-4 text-center">
                   {processing ? (
                     <div className="w-full space-y-3">
-                      <p className="text-sm font-medium text-gray-900">{ocrProgress?.message || 'Processing...'}</p>
+                      <p className="text-sm font-medium text-gray-900">{progress?.message || 'Processing...'}</p>
                       <div className="h-2 w-full overflow-hidden rounded-full bg-gray-200">
                         <div 
                           className="h-full rounded-full bg-indigo-600 transition-all duration-300"
-                          style={{ width: `${ocrProgress?.progress || 0}%` }}
+                          style={{ width: `${progress?.progress || 0}%` }}
                         />
                       </div>
                     </div>
                   ) : (
                     <>
-                      <p className="text-sm text-gray-500">No text extracted</p>
+                      <p className="text-sm text-gray-500">No information extracted</p>
                       <button 
                         className="mt-2 text-sm text-indigo-600 hover:text-indigo-500"
-                        onClick={async () => {
-                          if (!document || !document.content) return;
-                          
-                          try {
-                            setProcessing(true);
-                            const processor = new DocumentProcessor();
-                            
-                            // Convert base64 content to Blob, then to File
-                            const blob = base64ToBlob(document.content);
-                            const file = new File([blob], document.name, { type: document.type });
-                            
-                            const text = await processor.processImage(file, (progress) => {
-                              setOcrProgress(progress);
-                            });
-                            
-                            // Update document in database
-                            const db = await getDB();
-                            await db.put('documents', {
-                              ...document,
-                              text
-                            });
-                            
-                            // Update state
-                            setDocument(prev => prev ? { ...prev, text } : null);
-                          } catch (err) {
-                            console.error('Failed to re-run OCR:', err);
-                            setError(err instanceof Error ? err.message : 'Failed to process document');
-                          } finally {
-                            setProcessing(false);
-                            setOcrProgress(null);
-                          }
-                        }}
+                        onClick={handleReprocess}
                       >
-                        Re-run OCR
+                        Process Document
                       </button>
                     </>
                   )}
