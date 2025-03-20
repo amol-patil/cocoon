@@ -1,50 +1,68 @@
-import { openDB, DBSchema, IDBPDatabase } from 'idb';
-import type { ProcessedDocument } from '../services/documentProcessor';
+import { openDB, IDBPDatabase, deleteDB } from 'idb';
+import { Document, Folder, Tag } from '../types';
 
-interface CocoonDB extends DBSchema {
+interface CocoonDB {
   documents: {
     key: string;
-    value: ProcessedDocument;
-    indexes: {
-      'by-created': Date;
-      'by-folder': string;
-    };
+    value: Document;
+    indexes: { 'by-folder': string; 'by-tag': string[] };
   };
   folders: {
     key: string;
-    value: {
-      id: string;
-      name: string;
-      parentId?: string;
-      createdAt: Date;
-      updatedAt: Date;
-    };
+    value: Folder;
+    indexes: { 'by-parent': string };
+  };
+  tags: {
+    key: string;
+    value: Tag;
   };
 }
 
 let db: IDBPDatabase<CocoonDB> | null = null;
 
-export async function getDB(): Promise<IDBPDatabase<CocoonDB>> {
-  if (!db) {
-    db = await openDB<CocoonDB>('cocoon', 1, {
-      upgrade(db) {
-        // Create the documents store
-        if (!db.objectStoreNames.contains('documents')) {
-          const documentStore = db.createObjectStore('documents', {
-            keyPath: 'id',
-          });
-          documentStore.createIndex('by-created', 'createdAt');
-        }
+const DB_NAME = 'cocoon';
+const DB_VERSION = 1;
 
-        // Create the folders store
-        if (!db.objectStoreNames.contains('folders')) {
-          db.createObjectStore('folders', {
-            keyPath: 'id',
-          });
-        }
-      },
-    });
+export async function deleteDatabase() {
+  try {
+    await deleteDB(DB_NAME);
+    console.log('Database deleted successfully');
+  } catch (error) {
+    console.error('Error deleting database:', error);
+    throw error;
   }
+}
+
+export async function getDB(): Promise<IDBPDatabase<CocoonDB>> {
+  if (db) {
+    return db;
+  }
+
+  console.log('IndexedDB: Starting database initialization');
+  db = await openDB<CocoonDB>(DB_NAME, DB_VERSION, {
+    upgrade(db) {
+      if (!db.objectStoreNames.contains('documents')) {
+        const documentsStore = db.createObjectStore('documents', { keyPath: 'id' });
+        documentsStore.createIndex('by-folder', 'folderId');
+        documentsStore.createIndex('by-tag', 'tags', { multiEntry: true });
+      }
+      if (!db.objectStoreNames.contains('folders')) {
+        const foldersStore = db.createObjectStore('folders', { keyPath: 'id' });
+        foldersStore.createIndex('by-parent', 'parentId');
+      }
+      if (!db.objectStoreNames.contains('tags')) {
+        db.createObjectStore('tags', { keyPath: 'id' });
+      }
+    }
+  });
+
+  console.log('IndexedDB: Database opened successfully');
+  console.log('IndexedDB: Current stores:', Array.from(db.objectStoreNames));
+
+  // Log the number of documents
+  const count = await db.count('documents');
+  console.log('IndexedDB: Documents store count:', count);
+
   return db;
 }
 

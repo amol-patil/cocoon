@@ -84,8 +84,40 @@ export class DocumentProcessor {
   }
 
   private async storeDocument(doc: ProcessedDocument): Promise<void> {
-    const db = await getDB();
-    await db.put('documents', doc);
+    console.log('DocumentProcessor: Starting to store document:', {
+      id: doc.id,
+      name: doc.name,
+      type: doc.type
+    });
+
+    try {
+      const db = await getDB();
+      console.log('DocumentProcessor: Got database connection');
+
+      // Verify the documents store exists
+      const stores = Array.from(db.objectStoreNames);
+      console.log('DocumentProcessor: Available stores:', stores);
+
+      if (!stores.includes('documents')) {
+        console.error('DocumentProcessor: documents store not found');
+        throw new Error('Database store not found');
+      }
+
+      await db.put('documents', doc);
+      console.log('DocumentProcessor: Document stored successfully');
+
+      // Verify the document was stored
+      const storedDoc = await db.get('documents', doc.id);
+      console.log('DocumentProcessor: Verified stored document:', storedDoc);
+
+      if (!storedDoc) {
+        console.error('DocumentProcessor: Document not found after storage');
+        throw new Error('Failed to verify document storage');
+      }
+    } catch (error) {
+      console.error('DocumentProcessor: Error storing document:', error);
+      throw error;
+    }
   }
 
   public async processDocument(
@@ -151,14 +183,6 @@ export class DocumentProcessor {
       });
 
       doc.thumbnail = await this.createThumbnail(file);
-
-      onProgress?.({
-        status: 'storing',
-        progress: 95,
-        message: 'Storing document...',
-      });
-
-      await this.storeDocument(doc);
 
       onProgress?.({
         status: 'complete',

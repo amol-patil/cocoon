@@ -2,12 +2,14 @@
 
 import { useCallback, useState } from 'react';
 import { useDropzone } from 'react-dropzone';
+import { useRouter } from 'next/navigation';
 import { DocumentProcessor } from '@/lib/services/documentProcessor';
+import { DocumentService } from '@/lib/services/documentService';
 import type { ProcessingProgress } from '@/lib/services/documentProcessor';
-import { getDB } from '@/lib/storage/indexeddb';
 import { ArrowUpTrayIcon } from '@heroicons/react/24/outline';
 
 export function UploadZone() {
+  const router = useRouter();
   const [isUploading, setIsUploading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [progress, setProgress] = useState<ProcessingProgress | null>(null);
@@ -28,18 +30,29 @@ export function UploadZone() {
     setProgress(null);
 
     try {
-      const processor = new DocumentProcessor();
-      const db = await getDB();
+      console.log('UploadZone: Starting document upload:', {
+        fileName: selectedFile.name,
+        documentType
+      });
 
+      const processor = new DocumentProcessor();
       const processedDoc = await processor.processDocument(selectedFile, documentType, (progress) => {
         setProgress(progress);
       });
-      await db.put('documents', processedDoc);
 
-      // Redirect to documents page after successful upload
-      window.location.href = '/documents';
+      console.log('UploadZone: Document processed, saving to database:', processedDoc);
+
+      // Use DocumentService to save the document
+      const savedDoc = await DocumentService.createDocument(processedDoc);
+      console.log('UploadZone: Document saved successfully:', savedDoc);
+
+      // Force a re-render of the document list
+      router.refresh();
+      
+      // Navigate to documents page
+      router.push('/documents');
     } catch (err) {
-      console.error('Error processing document:', err);
+      console.error('UploadZone: Error processing document:', err);
       setError(err instanceof Error ? err.message : 'Failed to process document');
     } finally {
       setIsUploading(false);

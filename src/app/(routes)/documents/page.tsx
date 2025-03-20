@@ -2,7 +2,6 @@
 
 import Link from 'next/link';
 import { PlusIcon } from '@heroicons/react/24/outline';
-import DocumentGrid from '@/components/document/DocumentGrid';
 
 export default function DocumentsPage() {
   return (
@@ -22,8 +21,6 @@ export default function DocumentsPage() {
           Upload
         </Link>
       </div>
-
-      <DocumentGrid />
     </div>
   );
 } 
