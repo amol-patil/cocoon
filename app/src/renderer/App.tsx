@@ -396,6 +396,13 @@ function App() {
     return fuse.search<Document>(searchTerm);
   }, [searchTerm, fuse, viewMode]);
 
+  // Find the expanded document based on ID and current documents state
+  const expandedDoc = useMemo(() => {
+      if (!expandedDocId) return null;
+      return documents.find(doc => doc.id === expandedDocId) || null;
+  }, [expandedDocId, documents]);
+
+  // Reset index/expanded state on search term change (only in search mode)
   useEffect(() => {
     if (viewMode === 'search') {
         setSelectedIndex(0);
@@ -458,62 +465,57 @@ function App() {
     // window.ipc.send('open-external-link', link);
   }, []);
 
-  const expandedDoc = useMemo(() => {
-      if (!expandedDocId) return null;
-      // Use current documents state
-      return documents.find(doc => doc.id === expandedDocId) || null;
-  }, [expandedDocId, documents]); // Depend on documents state
-
+  // === Keyboard Handler ===
   const handleKeyDown = useCallback((event: React.KeyboardEvent) => {
-    // Disable keyboard nav if not in search mode
-    if (viewMode !== 'search') return;
-
-    if (expandedDocId) {
-      if (event.key === 'Escape' || event.key === 'ArrowLeft') {
-        event.preventDefault();
-        setExpandedDocId(null);
-      }
-      return;
-    }
-
-    if (searchResults.length === 0) return;
-
-    switch (event.key) {
-      case 'ArrowDown':
-        event.preventDefault();
-        setSelectedIndex((prevIndex) =>
-          prevIndex < searchResults.length - 1 ? prevIndex + 1 : prevIndex
-        );
-        break;
-      case 'ArrowUp':
-        event.preventDefault();
-        setSelectedIndex((prevIndex) =>
-          prevIndex > 0 ? prevIndex - 1 : 0
-        );
-        break;
-       case 'ArrowRight':
-        event.preventDefault();
-        if (searchResults[selectedIndex]) {
-          setExpandedDocId(searchResults[selectedIndex].item.id);
+    // Handle keys differently based on view mode
+    if (viewMode === 'search') {
+        // --- Search Mode Key Handling ---
+        if (expandedDocId) {
+            // Expanded View Active
+            if (event.key === 'Escape' || event.key === 'ArrowLeft') {
+                event.preventDefault();
+                setExpandedDocId(null); // Collapse
+            }
+            // Add other keybinds for expanded view if needed (e.g., copy fields)
+        } else {
+            // List View Active
+            if (searchResults.length === 0) return;
+            switch (event.key) {
+                case 'ArrowDown':
+                    event.preventDefault();
+                    setSelectedIndex(prev => Math.min(prev + 1, searchResults.length - 1));
+                    break;
+                case 'ArrowUp':
+                    event.preventDefault();
+                    setSelectedIndex(prev => Math.max(prev - 1, 0));
+                    break;
+                case 'ArrowRight':
+                    event.preventDefault();
+                    if (searchResults[selectedIndex]) {
+                        setExpandedDocId(searchResults[selectedIndex].item.id); // Expand
+                    }
+                    break;
+                case 'Enter':
+                    event.preventDefault();
+                    if (searchResults[selectedIndex]) {
+                        const item = searchResults[selectedIndex].item;
+                        const value = item.fields[item.defaultField];
+                        if (value) handleCopy(value);
+                        else console.log(`Default field '${item.defaultField}' not found.`);
+                    }
+                    break;
+                // Add Shift+Number handlers here later if desired
+            }
         }
-        break;
-      case 'Enter':
-        event.preventDefault();
-        if (searchResults[selectedIndex]) {
-          const selectedDoc = searchResults[selectedIndex].item;
-             const defaultFieldName = selectedDoc.defaultField;
-             const valueToCopy = selectedDoc.fields[defaultFieldName];
-             if (valueToCopy) {
-               handleCopy(valueToCopy);
-             } else {
-               console.log(`Default field '${defaultFieldName}' not found or empty.`);
-             }
+    } else if (viewMode === 'manage') {
+        // TODO: Add keyboard navigation for manage view? (e.g., focus buttons)
+    } else if (viewMode === 'editForm') {
+        // Prevent Enter from submitting forms accidentally if needed, or handle Escape key
+        if (event.key === 'Escape') {
+            handleCancelEdit();
         }
-        break;
-      default:
-        break;
     }
-  }, [searchResults, selectedIndex, expandedDocId, handleCopy, viewMode]); // Add viewMode dependency
+  }, [viewMode, searchResults, selectedIndex, expandedDocId, handleCopy, handleCancelEdit]); // Dependencies
 
   // === Render Logic ===
   const renderContent = () => {
@@ -538,75 +540,72 @@ function App() {
             );
         case 'search':
         default:
-            return (
-                <>
-                    {/* Search Input & Manage Button */}
-                    <div className="flex items-center mb-4">
-                        <input
-                            type="text"
-                            placeholder="Search your documents..."
-                            value={searchTerm}
-                            onChange={(e) => setSearchTerm(e.target.value)}
-                            onKeyDown={handleKeyDown}
-                            className="flex-grow w-full px-4 py-2 text-lg text-white bg-white/10 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 placeholder-gray-400"
-                            autoFocus
-                        />
-                        <button
-                            onClick={() => setViewMode('manage')}
-                            className="ml-2 p-2 text-gray-400 hover:text-white bg-white/10 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                            aria-label="Manage Documents"
-                        >
-                            ⚙️
-                        </button>
-                    </div>
-
-                    {/* Search Results Area */}
-                    <div className="flex-grow overflow-y-auto">
-                        {!searchTerm && (
-                        <p className="text-gray-500 text-center mt-4">Start typing to search...</p>
-                        )}
-                        {searchTerm && searchResults.length === 0 && (
-                        <p className="text-gray-500 text-center mt-4">No results found for \"{searchTerm}\"</p>
-                        )}
-                        {searchTerm && searchResults.length > 0 && (
-                        <ul>
-                            {searchResults.map(({ item, score }, index) => (
-                            <li
-                                key={item.id}
-                                className={`p-3 mb-1 rounded cursor-pointer transition-colors duration-100 ease-in-out ${
-                                index === selectedIndex
-                                    ? 'bg-blue-600/60 ring-1 ring-blue-400'
-                                    : 'hover:bg-white/10'
-                                }`}
-                                onClick={() => setExpandedDocId(item.id)}
-                                onMouseEnter={() => setSelectedIndex(index)}
+            // In search mode, show expanded card OR the search list
+            if (expandedDoc) {
+                return (
+                    <ExpandedCard
+                        doc={expandedDoc}
+                        onCollapse={() => setExpandedDocId(null)}
+                        onCopy={handleCopy}
+                        onOpenFile={handleOpenFile}
+                    />
+                );
+            } else {
+                // Show Search Input and Results List
+                return (
+                    <React.Fragment>
+                        <div className="flex items-center mb-4">
+                            <input
+                                type="text"
+                                placeholder="Search your documents..."
+                                value={searchTerm}
+                                onChange={(e) => setSearchTerm(e.target.value)}
+                                onKeyDown={handleKeyDown}
+                                className="flex-grow w-full px-4 py-2 text-lg text-white bg-white/10 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 placeholder-gray-400"
+                                autoFocus
+                            />
+                            <button
+                                onClick={() => setViewMode('manage')}
+                                className="ml-2 p-2 text-gray-400 hover:text-white bg-white/10 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                aria-label="Manage Documents"
                             >
-                                <p className="font-semibold truncate">{item.type}</p>
-                                <p className="text-sm text-gray-300 truncate">
-                                {item.fields[item.defaultField] || 'No default value'}
-                                </p>
-                            </li>
-                            ))}
-                        </ul>
-                        )}
-                    </div>
-                </>
-            );
+                                ⚙️
+                            </button>
+                        </div>
+                        <div className="flex-grow overflow-y-auto">
+                            {!searchTerm && <p className="text-gray-500 text-center mt-4">Start typing to search...</p>}
+                            {searchTerm && searchResults.length === 0 && <p className="text-gray-500 text-center mt-4">No results found for "{searchTerm}"</p>}
+                            {searchTerm && searchResults.length > 0 && (
+                                <ul>
+                                    {searchResults.map(({ item }, index) => (
+                                        <li
+                                            key={item.id}
+                                            className={`p-3 mb-1 rounded cursor-pointer transition-colors duration-100 ease-in-out ${
+                                                index === selectedIndex
+                                                    ? 'bg-blue-600/60 ring-1 ring-blue-400'
+                                                    : 'hover:bg-white/10'
+                                            }`}
+                                            onClick={() => setExpandedDocId(item.id)}
+                                            onMouseEnter={() => setSelectedIndex(index)}
+                                        >
+                                            <p className="font-semibold truncate">{item.type}</p>
+                                            <p className="text-sm text-gray-300 truncate">
+                                                {item.fields[item.defaultField] || 'No default value'}
+                                            </p>
+                                        </li>
+                                    ))}
+                                </ul>
+                            )}
+                        </div>
+                    </React.Fragment>
+                );
+            }
      }
   };
 
   return (
     <div className="flex flex-col h-screen p-4 bg-gradient-to-r from-blue-950 via-purple-950 to-indigo-950 text-white rounded-lg shadow-xl overflow-hidden relative">
        {renderContent()}
-
-       {viewMode === 'search' && expandedDoc && (
-            <ExpandedCard
-                doc={expandedDoc}
-                onCollapse={() => setExpandedDocId(null)}
-                onCopy={handleCopy}
-                onOpenFile={handleOpenFile}
-            />
-       )}
     </div>
   );
 }
