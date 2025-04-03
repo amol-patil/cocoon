@@ -85,10 +85,13 @@ function createWindow() {
   });
 
   mainWindow.on('blur', () => { // Hide on blur
-    if (mainWindow && !mainWindow.webContents.isDevToolsFocused()) {
-      console.log('Main window blurred, hiding...');
-      mainWindow.hide();
-    }
+    // Add a small delay before hiding to allow external actions (like opening a link) to complete
+    setTimeout(() => {
+         if (mainWindow && !mainWindow.webContents.isDevToolsFocused()) {
+            console.log('Main window blurred, hiding after delay...');
+            mainWindow.hide();
+         }
+    }, 150); // 150ms delay
   });
 
   console.log('Main window created successfully.');
