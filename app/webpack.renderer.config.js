@@ -2,31 +2,32 @@ const path = require('path');
 const rules = require('./webpack.rules');
 const plugins = require('./webpack.plugins');
 
+// Export a function that returns the webpack config
+// This is required by Electron Forge's webpack plugin
 module.exports = {
   module: {
     rules,
   },
-  plugins: plugins,
+  plugins,
   resolve: {
     extensions: ['.js', '.ts', '.jsx', '.tsx', '.css'],
+    fallback: {
+      path: false,
+      fs: false,
+    },
   },
-  target: 'web', // Change target to 'web'
-  devtool: 'inline-source-map', // Good source maps for development
+  target: 'web',
+  devtool: 'inline-source-map',
   devServer: {
-    port: 3001, // Use a specific port
-    hot: false, // Disable HMR temporarily
-    liveReload: true, // Keep liveReload for now
+    port: 3001,
     static: {
-      directory: path.resolve(__dirname, 'public'), // Serve static files from public
+      directory: path.join(__dirname, 'public'),
       publicPath: '/',
     },
-    historyApiFallback: true, // Helps with routing in SPA
-    // We need to disable host check for HMR in Electron env
-    allowedHosts: 'all',
+    hot: false,
+    liveReload: true,
     headers: {
-      'Access-Control-Allow-Origin': '*', // Allow CORS for HMR
+      'Access-Control-Allow-Origin': '*',
     },
   },
-  // Explicitly tell webpack not to polyfill or mock node globals/modules
-  node: false,
 }; 

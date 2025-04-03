@@ -1,5 +1,6 @@
 import { app, BrowserWindow, session, globalShortcut } from 'electron';
 import * as path from 'path';
+import * as fs from 'fs';
 import * as isDev from 'electron-is-dev';
 
 declare const MAIN_WINDOW_WEBPACK_ENTRY: string;
@@ -8,24 +9,31 @@ declare const MAIN_WINDOW_PRELOAD_WEBPACK_ENTRY: string;
 let mainWindow: BrowserWindow | null = null;
 
 function createWindow() {
-  console.log('Creating main window...'); // Log window creation start
+  console.log('Creating main window...');
+
+  const preloadScriptPath = MAIN_WINDOW_PRELOAD_WEBPACK_ENTRY;
+  console.log('Preload script path:', preloadScriptPath);
+
+  const webPreferencesConfig = {
+    nodeIntegration: false,
+    contextIsolation: true,
+    preload: preloadScriptPath,
+    webSecurity: true,
+    sandbox: false
+  };
+
   mainWindow = new BrowserWindow({
-    width: 600, // Adjust size as needed
+    width: 600,
     height: 400,
-    show: false, // Start hidden
+    show: false,
     frame: false,
     transparent: true,
     alwaysOnTop: true,
-    webPreferences: {
-      nodeIntegration: false, // Keep false for security
-      contextIsolation: true, // Keep true for security
-      preload: MAIN_WINDOW_PRELOAD_WEBPACK_ENTRY, // Use preload script path provided by webpack
-      webSecurity: true,
-    },
+    webPreferences: webPreferencesConfig,
   });
 
   // Load the index.html of the app.
-  console.log(`Loading URL: ${MAIN_WINDOW_WEBPACK_ENTRY}`); // Log URL loading
+  console.log(`Loading URL: ${MAIN_WINDOW_WEBPACK_ENTRY}`);
   mainWindow.loadURL(MAIN_WINDOW_WEBPACK_ENTRY);
 
   // Configure CSP
@@ -35,8 +43,8 @@ function createWindow() {
         ...details.responseHeaders,
         'Content-Security-Policy': [
           isDev
-            ? "default-src 'self' 'unsafe-inline' data:; script-src 'self' 'unsafe-eval' 'unsafe-inline' data:; connect-src 'self' http://localhost:* ws://localhost:*"
-            : "default-src 'self' 'unsafe-inline' data:; script-src 'self' 'unsafe-inline' data:"
+            ? "default-src 'self' 'unsafe-inline' data:; script-src 'self' 'unsafe-eval' 'unsafe-inline' data:; connect-src 'self' http://localhost:* ws://localhost:*; style-src 'self' 'unsafe-inline';"
+            : "default-src 'self' 'unsafe-inline' data:; script-src 'self' 'unsafe-inline' data:; style-src 'self' 'unsafe-inline';"
         ]
       }
     });
@@ -44,23 +52,34 @@ function createWindow() {
 
   // Open DevTools in development
   if (isDev) {
-    console.log('Opening DevTools...'); // Log DevTools opening
+    console.log('Opening DevTools...');
     mainWindow.webContents.openDevTools({ mode: 'detach' });
   }
 
+  // Debug preload script loading
+  mainWindow.webContents.on('did-finish-load', () => {
+    console.log('Window loaded, checking if preload APIs are available...');
+    mainWindow?.webContents.executeJavaScript(`
+      console.log('Window APIs:', {
+        electronClipboard: typeof window.electronClipboard,
+        ipc: typeof window.ipc
+      });
+    `);
+  });
+
   mainWindow.on('closed', () => {
-    console.log('Main window closed.'); // Log window close
+    console.log('Main window closed.');
     mainWindow = null;
   });
 
   mainWindow.on('blur', () => { // Hide on blur
     if (mainWindow && !mainWindow.webContents.isDevToolsFocused()) {
-      console.log('Main window blurred, but NOT hiding (temporary debug).'); // Log blur but don't hide
-      // mainWindow.hide(); // << Temporarily commented out
+      console.log('Main window blurred, hiding...');
+      mainWindow.hide();
     }
   });
 
-  console.log('Main window created successfully.'); // Log window creation end
+  console.log('Main window created successfully.');
 }
 
 function toggleWindow() {

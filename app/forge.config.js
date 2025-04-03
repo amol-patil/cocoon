@@ -34,16 +34,16 @@ module.exports = {
           config: './webpack.renderer.config.js',
           entryPoints: [
             {
+              name: 'main_window',
               html: './public/index.html',
               js: './src/renderer/index.tsx',
-              name: 'main_window',
               preload: {
-                js: './src/main/preload.ts',
-              },
-            },
-          ],
-        },
-      },
+                js: './src/main/preload.ts'
+              }
+            }
+          ]
+        }
+      }
     },
     // Fuses are used to enable/disable experimental features
     new FusesPlugin({
