@@ -1,0 +1,22 @@
+# Node
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Build Artifacts
+.webpack/
+dist/
+out/
+
+# Electron Forge
+.electron/
+
+# IDE / OS specific
+.DS_Store
+*.pem
+
+# Env Files
+.env
+.env.*
+!.env.example 
