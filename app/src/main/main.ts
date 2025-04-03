@@ -1,7 +1,18 @@
-import { app, BrowserWindow, session, globalShortcut } from 'electron';
+import { app, BrowserWindow, session, globalShortcut, ipcMain, shell } from 'electron';
 import * as path from 'path';
 import * as fs from 'fs';
 import * as isDev from 'electron-is-dev';
+import { loadDocuments, saveDocuments } from './secureStore';
+
+// Define Document type again (needed for IPC typing)
+interface DocumentField { [key: string]: string | undefined }
+interface Document {
+  id: string;
+  type: string;
+  defaultField: string;
+  fields: DocumentField;
+  fileLink: string;
+}
 
 declare const MAIN_WINDOW_WEBPACK_ENTRY: string;
 declare const MAIN_WINDOW_PRELOAD_WEBPACK_ENTRY: string;
@@ -56,7 +67,6 @@ function createWindow() {
     mainWindow.webContents.openDevTools({ mode: 'detach' });
   }
 
-  // Debug preload script loading
   mainWindow.webContents.on('did-finish-load', () => {
     console.log('Window loaded, checking if preload APIs are available...');
     mainWindow?.webContents.executeJavaScript(`
@@ -65,6 +75,8 @@ function createWindow() {
         ipc: typeof window.ipc
       });
     `);
+    // Optionally, send initial documents on load?
+    // Or wait for renderer to request them.
   });
 
   mainWindow.on('closed', () => {
@@ -99,11 +111,51 @@ function toggleWindow() {
   }
 }
 
+// --- IPC Handlers ---
+
+// Handle request to load documents
+ipcMain.handle('load-documents', async (event) => {
+  try {
+    console.log('[IPC] Received load-documents request');
+    const documents = await loadDocuments();
+    console.log(`[IPC] Sending ${documents.length} documents to renderer.`);
+    return documents;
+  } catch (error) {
+    console.error('[IPC] Error loading documents:', error);
+    // Consider sending error back to renderer
+    return []; // Return empty array on error for now
+  }
+});
+
+// Handle request to save documents
+ipcMain.handle('save-documents', async (event, documents: Document[]) => {
+  try {
+    console.log(`[IPC] Received save-documents request with ${documents.length} documents.`);
+    await saveDocuments(documents);
+    console.log('[IPC] Documents saved successfully.');
+    return { success: true };
+  } catch (error) {
+    console.error('[IPC] Error saving documents:', error);
+    return { success: false, error: (error as Error).message };
+  }
+});
+
+// Handle request to open external link
+ipcMain.on('open-external-link', (event, url: string) => {
+    if (url && (url.startsWith('http://') || url.startsWith('https://'))) {
+        console.log(`[IPC] Opening external link: ${url}`);
+        shell.openExternal(url);
+    } else {
+        console.warn(`[IPC] Received invalid URL to open: ${url}`);
+    }
+});
+
+// --- App Lifecycle Events ---
+
 app.on('ready', () => {
-  console.log('App ready, creating window and registering shortcut...'); // Log ready event
+  console.log('App ready, creating window and registering shortcut...');
   createWindow();
 
-  // Register global shortcut
   const shortcut = 'Control+Option+Space';
   const ret = globalShortcut.register(shortcut, toggleWindow);
   if (!ret) {
@@ -114,14 +166,14 @@ app.on('ready', () => {
 });
 
 app.on('window-all-closed', () => {
-  console.log('All windows closed.'); // Log all windows closed
+  console.log('All windows closed.');
   if (process.platform !== 'darwin') {
     app.quit();
   }
 });
 
 app.on('activate', () => {
-  console.log('App activated.'); // Log activate event
+  console.log('App activated.');
   if (BrowserWindow.getAllWindows().length === 0) {
     console.log('No windows open, creating new one.');
     createWindow();
@@ -129,7 +181,6 @@ app.on('activate', () => {
 });
 
 app.on('will-quit', () => {
-  console.log('App will quit, unregistering shortcuts.'); // Log will quit
-  // Unregister all shortcuts.
+  console.log('App will quit, unregistering shortcuts.');
   globalShortcut.unregisterAll();
 }); 

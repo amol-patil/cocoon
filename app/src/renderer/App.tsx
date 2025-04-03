@@ -12,43 +12,8 @@ interface Document {
 }
 
 // --- Initial Data ---
-// Moved into component state later
-const initialMockDocuments: Document[] = [
-  {
-    id: 'doc1',
-    type: "Driver's License",
-    defaultField: "number",
-    fields: {
-      number: "A1234-56789-01234",
-      expires: "2027-05-14",
-      issued: "2021-05-14",
-      state: "CA",
-    },
-    fileLink: "https://drive.google.com/file/d/abc123/view"
-  },
-  {
-    id: 'doc2',
-    type: "Passport",
-    defaultField: "number",
-    fields: {
-      number: "X98765432",
-      expires: "2030-12-01",
-      country: "USA",
-    },
-    fileLink: "https://drive.google.com/file/d/def456/view"
-  },
-  {
-    id: 'doc3',
-    type: "Insurance Card",
-    defaultField: "policyNumber",
-    fields: {
-      provider: "Health Co",
-      policyNumber: "HC-1234567",
-      groupNumber: "G-98765",
-    },
-    fileLink: "https://drive.google.com/file/d/ghi789/view"
-  }
-];
+// Removed - will be loaded via IPC
+// const initialMockDocuments: Document[] = [ ... ];
 
 // --- Fuse.js Setup ---
 const fuseOptions = {
@@ -169,8 +134,8 @@ function ManageDocumentsView({ documents, onAdd, onEdit, onDelete, onBack }: Man
 
 // Document Form Component
 interface DocumentFormProps {
-    documentToEdit: Document | null; // null when adding new
-    onSave: (docData: Omit<Document, 'id'> & { id?: string }) => void; // Allow optional ID for saving
+    documentToEdit: Document | null;
+    onSave: (docData: Omit<Document, 'id'> & { id?: string }) => void;
     onCancel: () => void;
 }
 
@@ -178,94 +143,53 @@ function DocumentForm({ documentToEdit, onSave, onCancel }: DocumentFormProps) {
     const [docType, setDocType] = useState(documentToEdit?.type || '');
     const [defaultFieldKey, setDefaultFieldKey] = useState(documentToEdit?.defaultField || '');
     const [fileLink, setFileLink] = useState(documentToEdit?.fileLink || '');
-    // Manage dynamic fields as an array of objects for easier state updates
     const [fields, setFields] = useState<Array<{ key: string; value: string }>>(() =>
         documentToEdit
-            ? Object.entries(documentToEdit.fields)
-                  .filter(([, value]) => value !== undefined) // Filter out undefined values if any
-                  .map(([key, value]) => ({ key, value: value! })) // Assert value is string
-            : [{ key: '', value: '' }] // Start with one empty field row for new docs
+            ? Object.entries(documentToEdit.fields).filter(([, v]) => v).map(([k, v]) => ({ key: k, value: v! }))
+            : [{ key: '', value: '' }]
     );
 
-    // Handler for updating a specific field's key or value
     const handleFieldChange = (index: number, type: 'key' | 'value', newValue: string) => {
-        const updatedFields = [...fields];
-        updatedFields[index] = { ...updatedFields[index], [type]: newValue };
+        const updatedFields = fields.map((field, i) => i === index ? { ...field, [type]: newValue } : field);
         setFields(updatedFields);
-
-        // If editing the key of the default field, update defaultFieldKey state
-        if (type === 'key' && updatedFields[index].key === defaultFieldKey) {
-             setDefaultFieldKey(newValue); // Keep default field key in sync if renamed
-        }
+        if (type === 'key' && fields[index].key === defaultFieldKey) { setDefaultFieldKey(newValue); }
     };
-
-    // Handler to add a new empty field row
-    const handleAddField = () => {
-        setFields([...fields, { key: '', value: '' }]);
-    };
-
-    // Handler to remove a field row
+    const handleAddField = () => { setFields([...fields, { key: '', value: '' }]); };
     const handleRemoveField = (index: number) => {
-        // If removing the field currently set as default, clear defaultFieldKey
-        if (fields[index].key === defaultFieldKey) {
-            setDefaultFieldKey('');
-        }
+        if (fields[index].key === defaultFieldKey) { setDefaultFieldKey(''); }
         setFields(fields.filter((_, i) => i !== index));
     };
 
-    // Handler for form submission
     const handleSubmit = (event: React.FormEvent) => {
         event.preventDefault();
-
-        // Basic Validation
-        if (!docType.trim()) {
-            alert('Document Type cannot be empty.'); // Simple alert for now
-            return;
-        }
+        if (!docType.trim()) { alert('Document Type cannot be empty.'); return; }
         const finalFields: DocumentField = {};
         let defaultFieldExists = false;
         for (const field of fields) {
             const key = field.key.trim();
             const value = field.value.trim();
-            if (key) { // Only save fields with a non-empty key
+            if (key) {
                 finalFields[key] = value;
-                if (key === defaultFieldKey.trim()) {
-                    defaultFieldExists = true;
-                }
+                if (key === defaultFieldKey.trim()) { defaultFieldExists = true; }
             }
         }
-
-        // Validate default field selection
         const finalDefaultField = defaultFieldKey.trim();
         if (finalDefaultField && !defaultFieldExists) {
-             alert(`The selected default field '${finalDefaultField}' does not exist or has an empty key. Please select a valid default field or leave it empty.`);
+             alert(`Default field '${finalDefaultField}' not found or invalid. Select a valid field.`);
              return;
         }
-        if (!finalDefaultField && Object.keys(finalFields).length > 0) {
-            // If no default is set, maybe pick the first one? Or prompt?
-            console.warn("No default field selected. Consider prompting the user or defaulting.");
-            // For now, we allow no default field
-        }
-
-
-        // Construct the document data for saving
         const docDataToSave: Omit<Document, 'id'> & { id?: string } = {
             type: docType.trim(),
-            defaultField: finalDefaultField, // Use trimmed key
+            defaultField: finalDefaultField,
             fields: finalFields,
             fileLink: fileLink.trim(),
         };
-
-        // Include the original ID if we are editing
-        if (documentToEdit) {
-            docDataToSave.id = documentToEdit.id;
-        }
-
+        if (documentToEdit) { docDataToSave.id = documentToEdit.id; }
         onSave(docDataToSave);
     };
 
     return (
-        <form onSubmit={handleSubmit} className="p-4 absolute inset-0 bg-gradient-to-b from-gray-800 via-gray-900 to-black overflow-y-auto flex flex-col text-sm"> {/* Changed background slightly */}
+        <form onSubmit={handleSubmit} className="p-4 absolute inset-0 bg-gradient-to-b from-gray-800 via-gray-900 to-black overflow-y-auto flex flex-col text-sm">
             <div className="flex justify-between items-center mb-4">
                  <h2 className="text-xl font-semibold">
                      {documentToEdit ? 'Edit Document' : 'Add New Document'}
@@ -276,96 +200,45 @@ function DocumentForm({ documentToEdit, onSave, onCancel }: DocumentFormProps) {
             {/* --- Core Fields --- */}
             <div className="mb-4">
                 <label htmlFor="docType" className="block text-gray-300 mb-1 font-medium">Document Type</label>
-                <input
-                    id="docType"
-                    type="text"
-                    value={docType}
-                    onChange={(e) => setDocType(e.target.value)}
-                    placeholder="e.g., Driver's License, Passport"
-                    required
-                    className="w-full p-2 bg-white/10 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
-                />
+                <input id="docType" type="text" value={docType} onChange={(e) => setDocType(e.target.value)} placeholder="e.g., Driver's License, Passport" required className="w-full p-2 bg-white/10 rounded focus:outline-none focus:ring-2 focus:ring-blue-500" />
             </div>
 
             <div className="mb-4">
                 <label htmlFor="defaultFieldKey" className="block text-gray-300 mb-1 font-medium">Default Field Key (for Enter key)</label>
-                <select
-                    id="defaultFieldKey"
-                    value={defaultFieldKey}
-                    onChange={(e) => setDefaultFieldKey(e.target.value)}
-                    className="w-full p-2 bg-white/10 rounded focus:outline-none focus:ring-2 focus:ring-blue-500 appearance-none"
-                    // Add background image for dropdown arrow (Tailwind doesn't do this by default)
-                    style={{ backgroundImage: `url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%236b7280' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3e%3c/svg%3e")`, backgroundPosition: `right 0.5rem center`, backgroundRepeat: `no-repeat`, backgroundSize: `1.5em 1.5em` }}
-                >
+                <select id="defaultFieldKey" value={defaultFieldKey} onChange={(e) => setDefaultFieldKey(e.target.value)} className="w-full p-2 bg-white/10 rounded focus:outline-none focus:ring-2 focus:ring-blue-500 appearance-none" style={{ backgroundImage: `url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%236b7280' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3e%3c/svg%3e")`, backgroundPosition: `right 0.5rem center`, backgroundRepeat: `no-repeat`, backgroundSize: `1.5em 1.5em` }} >
                     <option value="">-- Select Default Field --</option>
-                    {fields.map((field, index) => (
-                        field.key.trim() && <option key={`${field.key}-${index}`} value={field.key.trim()}>{field.key.trim()}</option>
-                    ))}
+                    {fields.map((field, index) => ( field.key.trim() && <option key={`${field.key}-${index}`} value={field.key.trim()}>{field.key.trim()}</option> ))}
                 </select>
                  <p className="text-xs text-gray-500 mt-1">Which field value should be copied when pressing Enter in search?</p>
             </div>
 
             <div className="mb-4">
                 <label htmlFor="fileLink" className="block text-gray-300 mb-1 font-medium">File Link (Optional)</label>
-                <input
-                    id="fileLink"
-                    type="url" // Use URL type for basic validation
-                    value={fileLink}
-                    onChange={(e) => setFileLink(e.target.value)}
-                    placeholder="https://drive.google.com/file/d/..."
-                    className="w-full p-2 bg-white/10 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
-                />
+                <input id="fileLink" type="url" value={fileLink} onChange={(e) => setFileLink(e.target.value)} placeholder="https://drive.google.com/file/d/..." className="w-full p-2 bg-white/10 rounded focus:outline-none focus:ring-2 focus:ring-blue-500" />
             </div>
 
             {/* --- Dynamic Fields --- */}
             <div className="mb-4 flex-grow">
                 <h3 className="text-gray-300 mb-2 font-medium">Fields</h3>
-                <div className="space-y-2 max-h-60 overflow-y-auto pr-2"> {/* Added max-height and scroll */}
+                <div className="space-y-2 max-h-60 overflow-y-auto pr-2">
                     {fields.map((field, index) => (
                         <div key={index} className="flex items-center space-x-2 bg-white/5 p-2 rounded">
-                            <input
-                                type="text"
-                                value={field.key}
-                                onChange={(e) => handleFieldChange(index, 'key', e.target.value)}
-                                placeholder="Field Key (e.g., number)"
-                                className="flex-1 p-1 bg-white/10 rounded focus:outline-none focus:ring-1 focus:ring-blue-500 text-xs"
-                            />
+                            <input type="text" value={field.key} onChange={(e) => handleFieldChange(index, 'key', e.target.value)} placeholder="Field Key (e.g., number)" className="flex-1 p-1 bg-white/10 rounded focus:outline-none focus:ring-1 focus:ring-blue-500 text-xs" />
                             <span className="text-gray-500">:</span>
-                            <input
-                                type="text"
-                                value={field.value}
-                                onChange={(e) => handleFieldChange(index, 'value', e.target.value)}
-                                placeholder="Field Value"
-                                className="flex-1 p-1 bg-white/10 rounded focus:outline-none focus:ring-1 focus:ring-blue-500 text-xs"
-                            />
-                            <button
-                                type="button"
-                                onClick={() => handleRemoveField(index)}
-                                className="p-1 text-red-500 hover:text-red-400 focus:outline-none rounded-full hover:bg-red-500/20"
-                                aria-label="Remove field"
-                                disabled={fields.length <= 1} // Don't allow removing the last row
-                            >
-                                <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                                    <path strokeLinecap="round" strokeLinejoin="round" d="M15 12H9m12 0a9 9 0 11-18 0 9 9 0 0118 0z" />
-                                </svg>
+                            <input type="text" value={field.value} onChange={(e) => handleFieldChange(index, 'value', e.target.value)} placeholder="Field Value" className="flex-1 p-1 bg-white/10 rounded focus:outline-none focus:ring-1 focus:ring-blue-500 text-xs" />
+                            <button type="button" onClick={() => handleRemoveField(index)} className="p-1 text-red-500 hover:text-red-400 focus:outline-none rounded-full hover:bg-red-500/20" aria-label="Remove field" disabled={fields.length <= 1} >
+                                <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M15 12H9m12 0a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
                             </button>
                         </div>
                     ))}
                 </div>
-                <button
-                    type="button"
-                    onClick={handleAddField}
-                    className="mt-2 text-xs text-blue-400 hover:text-blue-300 focus:outline-none flex items-center"
-                >
-                    <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                        <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v3m0 0v3m0-3h3m-3 0H9m12 0a9 9 0 11-18 0 9 9 0 0118 0z" />
-                    </svg>
-                    Add Field
+                <button type="button" onClick={handleAddField} className="mt-2 text-xs text-blue-400 hover:text-blue-300 focus:outline-none flex items-center" >
+                    <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M12 9v3m0 0v3m0-3h3m-3 0H9m12 0a9 9 0 11-18 0 9 9 0 0118 0z" /></svg> Add Field
                 </button>
             </div>
 
             {/* --- Actions --- */}
-            <div className="mt-auto pt-4 border-t border-white/10 flex justify-end space-x-3"> {/* Pushes buttons to bottom */}
+            <div className="mt-auto pt-4 border-t border-white/10 flex justify-end space-x-3">
                 <button type="button" onClick={onCancel} className="py-2 px-4 rounded bg-gray-600 hover:bg-gray-500 text-white text-sm">Cancel</button>
                 <button type="submit" className="py-2 px-4 rounded bg-blue-600 hover:bg-blue-500 text-white text-sm">Save Document</button>
             </div>
@@ -379,71 +252,107 @@ type ViewMode = 'search' | 'manage' | 'editForm';
 
 function App() {
   // === State ===
-  const [documents, setDocuments] = useState<Document[]>(initialMockDocuments);
+  const [documents, setDocuments] = useState<Document[]>([]); // Initialize empty, load from IPC
+  const [isLoading, setIsLoading] = useState(true); // Loading state
+  const [error, setError] = useState<string | null>(null); // Error state
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedIndex, setSelectedIndex] = useState(0);
   const [expandedDocId, setExpandedDocId] = useState<string | null>(null);
   const [viewMode, setViewMode] = useState<ViewMode>('search');
   const [docToEdit, setDocToEdit] = useState<Document | null>(null);
 
+  // Re-initialize Fuse when documents change
   const fuse = useMemo(() => new Fuse(documents, fuseOptions), [documents]);
+
+  // === Data Loading Effect ===
+  useEffect(() => {
+    console.log('Requesting documents from main process...');
+    setIsLoading(true);
+    window.ipc.invoke('load-documents') // Use invoke for handle
+      .then((loadedDocs: Document[]) => {
+        console.log(`Received ${loadedDocs.length} documents.`);
+        setDocuments(loadedDocs);
+        setError(null);
+      })
+      .catch((err: Error) => {
+        console.error('Error loading documents via IPC:', err);
+        setError('Failed to load documents. Please restart the application or check logs.');
+        setDocuments([]); // Set empty on error
+      })
+      .finally(() => {
+        setIsLoading(false);
+      });
+  }, []); // Run only once on mount
 
   // === Search Logic ===
   const searchResults = useMemo(() => {
-    if (viewMode !== 'search' || !searchTerm) {
-      return [];
-    }
+    if (viewMode !== 'search' || !searchTerm) { return []; }
     return fuse.search<Document>(searchTerm);
   }, [searchTerm, fuse, viewMode]);
 
-  // Find the expanded document based on ID and current documents state
   const expandedDoc = useMemo(() => {
       if (!expandedDocId) return null;
       return documents.find(doc => doc.id === expandedDocId) || null;
   }, [expandedDocId, documents]);
 
-  // Reset index/expanded state on search term change (only in search mode)
   useEffect(() => {
-    if (viewMode === 'search') {
-        setSelectedIndex(0);
-        setExpandedDocId(null);
-    }
+    if (viewMode === 'search') { setSelectedIndex(0); setExpandedDocId(null); }
   }, [searchTerm, viewMode]);
 
-  // === Document CRUD Handlers ===
+  // === Document CRUD Handlers (Now use IPC) ===
   const handleAddDocument = () => {
     setDocToEdit(null);
     setViewMode('editForm');
   };
-
   const handleEditDocument = (doc: Document) => {
      setDocToEdit(doc);
      setViewMode('editForm');
   };
 
-  const handleDeleteDocument = (id: string) => {
-    if (window.confirm('Are you sure you want to delete this document?')) {
-        setDocuments(docs => docs.filter(doc => doc.id !== id));
-        // TODO: Persist deletion
-    }
-  };
+  // Helper function to save documents via IPC
+  const saveDocumentsIPC = useCallback(async (updatedDocs: Document[]) => {
+      try {
+          console.log('Sending save-documents request via IPC...');
+          const result = await window.ipc.invoke('save-documents', updatedDocs);
+          if (!result?.success) {
+              console.error('Failed to save documents via IPC:', result?.error);
+              setError('Failed to save documents. Changes might not persist.');
+              // Optionally revert state? Or just show error?
+          } else {
+              console.log('Documents saved successfully via IPC.');
+              setError(null); // Clear error on success
+          }
+      } catch (ipcError) {
+          console.error('Error sending save-documents IPC message:', ipcError);
+          setError('An error occurred while trying to save documents.');
+      }
+  }, []);
 
-  // Updated to handle the object structure from DocumentForm
-  const handleSaveDocument = (docData: Omit<Document, 'id'> & { id?: string }) => {
-     console.log("Saving document:", docData);
-     if (docData.id) { // Update existing (ID is present)
-        setDocuments(docs => docs.map(doc => doc.id === docData.id ? { ...docData, id: docData.id! } as Document : doc));
+  const handleDeleteDocument = useCallback(async (id: string) => {
+    if (window.confirm('Are you sure you want to delete this document?')) {
+        const updatedDocs = documents.filter(doc => doc.id !== id);
+        setDocuments(updatedDocs); // Optimistic update
+        await saveDocumentsIPC(updatedDocs); // Persist change
+    }
+  }, [documents, saveDocumentsIPC]);
+
+  const handleSaveDocument = useCallback(async (docData: Omit<Document, 'id'> & { id?: string }) => {
+     console.log("Saving document (renderer):", docData);
+     let updatedDocs: Document[];
+     if (docData.id) { // Update existing
+        updatedDocs = documents.map(doc => doc.id === docData.id ? { ...docData, id: docData.id! } as Document : doc);
      } else { // Add new
         const newDoc: Document = {
             ...docData,
-            id: `doc-${Date.now()}-${Math.random().toString(36).substring(2, 8)}` // More robust unique ID
+            id: `doc-${Date.now()}-${Math.random().toString(36).substring(2, 8)}`
         };
-        setDocuments(docs => [...docs, newDoc]);
+        updatedDocs = [...documents, newDoc];
      }
-     // TODO: Persist changes
+     setDocuments(updatedDocs); // Optimistic update
      setViewMode('manage');
      setDocToEdit(null);
-  };
+     await saveDocumentsIPC(updatedDocs); // Persist change
+  }, [documents, saveDocumentsIPC]);
 
   const handleCancelEdit = () => {
      setViewMode('manage');
@@ -452,17 +361,13 @@ function App() {
 
   // === Other Handlers ===
   const handleCopy = useCallback((text: string) => {
-    try {
-      window.electronClipboard.writeText(text);
-      console.log(`Copied: ${text}`);
-    } catch (error) {
-       console.error("Failed to copy text:", error);
-    }
+    try { window.electronClipboard.writeText(text); console.log(`Copied: ${text}`); } catch (error) { console.error("Failed to copy text:", error); }
   }, []);
 
+  // Use IPC to open link
   const handleOpenFile = useCallback((link: string) => {
-    console.log("Attempting to open file link:", link);
-    // window.ipc.send('open-external-link', link);
+    console.log("Attempting to open file link via IPC:", link);
+    window.ipc.send('open-external-link', link);
   }, []);
 
   // === Keyboard Handler ===
@@ -519,6 +424,16 @@ function App() {
 
   // === Render Logic ===
   const renderContent = () => {
+      // Display loading indicator
+     if (isLoading) {
+         return <div className="flex items-center justify-center h-full"><p className="text-gray-400">Loading documents...</p></div>;
+     }
+     // Display error message
+     if (error) {
+         return <div className="flex items-center justify-center h-full p-4"><p className="text-red-400 text-center"><strong className="block mb-2">Error:</strong> {error}</p></div>;
+     }
+
+     // Render based on viewMode
      switch (viewMode) {
         case 'manage':
             return (
@@ -540,7 +455,6 @@ function App() {
             );
         case 'search':
         default:
-            // In search mode, show expanded card OR the search list
             if (expandedDoc) {
                 return (
                     <ExpandedCard
@@ -551,7 +465,6 @@ function App() {
                     />
                 );
             } else {
-                // Show Search Input and Results List
                 return (
                     <React.Fragment>
                         <div className="flex items-center mb-4">

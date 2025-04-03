@@ -11,39 +11,38 @@ const electronAPI = {
     }
   },
   ipc: {
+    // Send (fire-and-forget)
     send: (channel: string, data: any) => {
-      const validChannels = [
-        'copy-to-clipboard',
-        'show-overlay',
-        'hide-overlay',
-        'search-documents',
-        'open-document'
-      ];
-      if (validChannels.includes(channel)) {
+      const validSendChannels = ['open-external-link']; // Whitelist send channels
+      if (validSendChannels.includes(channel)) {
         ipcRenderer.send(channel, data);
       } else {
         console.warn(`Blocked send on invalid channel: ${channel}`);
       }
     },
+    // Receive (Main -> Renderer)
     on: (channel: string, func: (...args: any[]) => void) => {
-      const validChannels = [
-        'search-results',
-        'document-opened',
-        'error'
-      ];
-      if (validChannels.includes(channel)) {
+      const validReceiveChannels = ['search-results', 'document-opened', 'error']; // Whitelist receive channels
+      if (validReceiveChannels.includes(channel)) {
         ipcRenderer.on(channel, (event, ...args) => func(...args));
       }
     },
+    // Remove listener
     removeListener: (channel: string, func: (...args: any[]) => void) => {
-      const validChannels = [
-        'search-results',
-        'document-opened',
-        'error'
-      ];
-      if (validChannels.includes(channel)) {
+      const validReceiveChannels = ['search-results', 'document-opened', 'error'];
+      if (validReceiveChannels.includes(channel)) {
         ipcRenderer.removeListener(channel, func);
       }
+    },
+    // Invoke (Renderer -> Main -> Renderer)
+    invoke: async (channel: string, ...args: any[]): Promise<any> => {
+        const validInvokeChannels = ['load-documents', 'save-documents']; // Whitelist invoke channels
+        if (validInvokeChannels.includes(channel)) {
+            return await ipcRenderer.invoke(channel, ...args);
+        } else {
+            console.warn(`Blocked invoke on invalid channel: ${channel}`);
+            throw new Error(`Invalid IPC invoke channel: ${channel}`);
+        }
     }
   }
 };
@@ -51,13 +50,10 @@ const electronAPI = {
 // Expose the APIs
 try {
   console.log('Exposing Electron APIs to renderer...');
-  
   contextBridge.exposeInMainWorld('electronClipboard', electronAPI.clipboard);
   console.log('Clipboard API exposed successfully');
-  
   contextBridge.exposeInMainWorld('ipc', electronAPI.ipc);
   console.log('IPC API exposed successfully');
-  
   console.log('All APIs exposed successfully');
 } catch (error) {
   console.error('Failed to expose APIs:', error);
