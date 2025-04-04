@@ -13,6 +13,22 @@ interface Document {
   fileLink: string;
 }
 
+// Owner color mapping
+const getOwnerColor = (owner: string): { bg: string, text: string } => {
+  // Use a simple hash function to consistently map owners to colors
+  const colors = [
+    { bg: 'bg-emerald-600', text: 'text-emerald-100' },
+    { bg: 'bg-blue-600', text: 'text-blue-100' },
+    { bg: 'bg-purple-600', text: 'text-purple-100' },
+    { bg: 'bg-rose-600', text: 'text-rose-100' },
+    { bg: 'bg-amber-600', text: 'text-amber-100' },
+    { bg: 'bg-cyan-600', text: 'text-cyan-100' },
+  ];
+  
+  const hash = owner.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0);
+  return colors[hash % colors.length];
+};
+
 // --- Initial Data ---
 // Removed - will be loaded via IPC
 // const initialMockDocuments: Document[] = [ ... ];
@@ -54,11 +70,15 @@ function ExpandedCard({ doc, onCollapse, onCopy, onOpenFile }: ExpandedCardProps
       </button>
       <h3 className="text-lg font-semibold mb-1">
         {doc.type}
-        {doc.owner && <span className="text-sm text-gray-400 ml-2">({doc.owner})</span>}
+        {doc.owner && (
+          <span className={`ml-2 px-2 py-0.5 rounded-full text-sm ${getOwnerColor(doc.owner).bg} ${getOwnerColor(doc.owner).text}`}>
+            {doc.owner}
+          </span>
+        )}
       </h3>
       <ul className="space-y-2 mt-3">
         {Object.entries(doc.fields).map(([key, value]) => (
-          value && (
+          value && key !== 'owner' && (
             <li key={key} className="flex justify-between items-center group">
               <span className="text-sm font-medium text-gray-300 capitalize">{key}:</span>
               <div className="flex items-center space-x-2">
@@ -133,7 +153,7 @@ function ManageDocumentsView({ documents, onAdd, onEdit, onDelete, onBack, onEsc
               <li key={doc.id} className="p-3 bg-white/5 rounded flex justify-between items-center">
                 <span className="font-medium truncate mr-4">
                   {doc.type}
-                  {doc.owner && <span className="text-xs text-gray-400 ml-2">({doc.owner})</span>}
+                  {doc.fields.owner && <span className="text-xs text-gray-400 ml-2">({doc.fields.owner})</span>}
                 </span>
                 <div className="space-x-2 flex-shrink-0">
                   <button onClick={() => onEdit(doc)} className="text-xs px-2 py-1 bg-blue-600/50 hover:bg-blue-600 rounded">Edit</button>
@@ -202,13 +222,26 @@ function DocumentForm({ documentToEdit, onSave, onCancel, onEscape }: DocumentFo
 
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
-        const fieldsObject = fields.reduce((acc, field) => {
-            if (field.key) {
-                acc[field.key] = field.value;
-            }
-            return acc;
-        }, {} as DocumentField);
+        
+        if (!type.trim()) {
+            alert('Document type is required');
+            return;
+        }
 
+        if (!defaultField.trim()) {
+            alert('Default field is required');
+            return;
+        }
+
+        // Convert fields array to object, filtering out empty keys
+        const fieldsObject: DocumentField = {};
+        fields.forEach(field => {
+            if (field.key.trim()) {
+                fieldsObject[field.key.trim()] = field.value.trim() || undefined;
+            }
+        });
+        
+        // Return document with all required properties
         const docData = {
             id: documentToEdit?.id,
             type,
@@ -217,6 +250,7 @@ function DocumentForm({ documentToEdit, onSave, onCancel, onEscape }: DocumentFo
             fileLink,
             fields: fieldsObject,
         };
+        
         onSave(docData);
     };
 
@@ -723,8 +757,14 @@ export default function App() {
                                       }}
                                   >
                                       <div className="flex justify-between items-center">
-                                          <h3 className="font-medium text-md">{result.item.type}</h3>
-                                          <span className="text-xs text-gray-400">{result.item.fields.owner || ''}</span>
+                                          <h3 className="font-medium text-md">
+                                              {result.item.type}
+                                              {result.item.owner && (
+                                                  <span className={`ml-2 px-2 py-0.5 rounded-full text-sm ${getOwnerColor(result.item.owner).bg} ${getOwnerColor(result.item.owner).text}`}>
+                                                      {result.item.owner}
+                                                  </span>
+                                              )}
+                                          </h3>
                                       </div>
                                       <p className="text-sm text-gray-300 truncate">
                                           {result.item.defaultField && result.item.fields[result.item.defaultField]}
