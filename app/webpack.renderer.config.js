@@ -5,6 +5,12 @@ const plugins = require('./webpack.plugins');
 // Export a function that returns the webpack config
 // This is required by Electron Forge's webpack plugin
 module.exports = {
+  entry: './src/renderer/index.tsx',
+  output: {
+    path: path.resolve(__dirname, '.webpack/renderer'),
+    filename: 'index.js',
+    libraryTarget: 'umd'
+  },
   module: {
     rules,
   },

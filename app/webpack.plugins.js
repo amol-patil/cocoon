@@ -1,9 +1,21 @@
 const HtmlWebpackPlugin = require('html-webpack-plugin');
-
+const CopyWebpackPlugin = require('copy-webpack-plugin');
 module.exports = [
   new HtmlWebpackPlugin({
     template: './public/index.html',
   }),
-  // Required for HMR - Temporarily removed
-  // new webpack.HotModuleReplacementPlugin(),
+  new CopyWebpackPlugin({
+    patterns: [
+      {
+        from: 'public/assets',
+        to: 'assets',
+        noErrorOnMissing: true
+      },
+      {
+        from: 'icons',
+        to: 'icons',
+        noErrorOnMissing: true
+      }
+    ]
+  })
 ]; 

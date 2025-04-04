@@ -3,7 +3,7 @@
   "productName": "Cocoon",
   "version": "0.1.0",
   "description": "Mac overlay autofill assistant",
-  "main": ".webpack/main/index.js",
+  "main": ".webpack/main",
   "scripts": {
     "start": "electron-forge start",
     "package": "electron-forge package",
@@ -43,6 +43,7 @@
     "@vercel/webpack-asset-relocator-loader": "^1.7.4",
     "autoprefixer": "^10.4.19",
     "concurrently": "^8.2.2",
+    "copy-webpack-plugin": "^13.0.0",
     "css-loader": "^6.11.0",
     "electron": "^31.0.1",
     "eslint": "^8.57.0",

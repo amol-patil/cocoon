@@ -3,8 +3,22 @@ const { FuseV1Options, FuseVersion } = require('@electron/fuses');
 
 module.exports = {
   packagerConfig: {
+    arch: ['x64', 'arm64'],
     asar: true, // Bundle app source into an archive
-    icon: './path/to/icon' // TODO: Add an icon file later
+    icon: './icons/cocoon', // Updated to match the actual icon filename
+    appBundleId: 'com.pixelpieco.cocoon',
+    appCategoryType: 'public.app-category.productivity',
+    appCopyright: 'Copyright © 2023 PixelPieCo',
+    osxSign: false,  // Disable code signing completely
+    mas: false,      // Explicitly set not for Mac App Store
+    // Name that shows in the Dock
+    executableName: 'Cocoon',
+    // Add info.plist settings
+    extendInfo: {
+      CFBundleDisplayName: 'Cocoon',
+      CFBundleName: 'Cocoon',
+      NSHumanReadableCopyright: 'Copyright © 2023 PixelPieCo'
+    }
   },
   rebuildConfig: {},
   makers: [
@@ -15,6 +29,9 @@ module.exports = {
     {
       name: '@electron-forge/maker-zip',
       platforms: ['darwin'],
+      config: {
+        arch: ['x64', 'arm64']
+      }
     },
     {
       name: '@electron-forge/maker-deb',
