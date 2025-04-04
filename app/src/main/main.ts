@@ -190,13 +190,17 @@ function createAppMenu() {
       ]
     }] : []),
     
-    // Edit menu (just for clipboard operations)
+    // Edit menu (include standard roles)
     {
       label: 'Edit',
       submenu: [
+        { role: 'undo' },
+        { role: 'redo' },
+        { type: 'separator' },
         { role: 'cut' },
         { role: 'copy' },
-        { role: 'paste' }
+        { role: 'paste' },
+        { role: 'selectAll' }
       ]
     }
   ];
