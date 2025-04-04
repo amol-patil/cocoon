@@ -205,7 +205,7 @@ function DocumentForm({ documentToEdit, onSave, onCancel }: DocumentFormProps) {
     };
 
     return (
-        <form onSubmit={handleSubmit} className="p-4 space-y-4 flex flex-col h-full">
+        <form onSubmit={handleSubmit} className="p-4 space-y-4 flex flex-col h-full [-webkit-app-region:no-drag]">
             <h2 className="text-xl font-semibold mb-4 flex-shrink-0">
                 {documentToEdit ? 'Edit Document' : 'Add New Document'}
             </h2>
