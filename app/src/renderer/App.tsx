@@ -104,7 +104,7 @@ interface ManageDocumentsViewProps {
 }
 function ManageDocumentsView({ documents, onAdd, onEdit, onDelete, onBack }: ManageDocumentsViewProps) {
   return (
-    <div className="p-4 flex flex-col h-full">
+    <div className="p-4 flex flex-col h-full [-webkit-app-region:no-drag]">
       <div className="flex justify-between items-center mb-4">
         <h2 className="text-xl font-semibold">Manage Documents</h2>
         <button onClick={onBack} className="text-sm text-blue-400 hover:text-blue-300 focus:outline-none">← Back to Search</button>
@@ -116,7 +116,10 @@ function ManageDocumentsView({ documents, onAdd, onEdit, onDelete, onBack }: Man
           <ul className="space-y-2">
             {documents.map(doc => (
               <li key={doc.id} className="p-3 bg-white/5 rounded flex justify-between items-center">
-                <span className="font-medium truncate mr-4">{doc.type}</span>
+                <span className="font-medium truncate mr-4">
+                  {doc.type}
+                  {doc.owner && <span className="text-xs text-gray-400 ml-2">({doc.owner})</span>}
+                </span>
                 <div className="space-x-2 flex-shrink-0">
                   <button onClick={() => onEdit(doc)} className="text-xs px-2 py-1 bg-blue-600/50 hover:bg-blue-600 rounded">Edit</button>
                   <button onClick={() => onDelete(doc.id)} className="text-xs px-2 py-1 bg-red-600/50 hover:bg-red-600 rounded">Delete</button>
