@@ -60,7 +60,7 @@ interface ExpandedCardProps {
 }
 function ExpandedCard({ doc, onCollapse, onCopy, onOpenFile }: ExpandedCardProps) {
   return (
-    <div className="p-4 bg-white/10 rounded-lg absolute inset-0 overflow-y-auto [-webkit-app-region:no-drag]">
+    <div className="p-4 bg-white/10 rounded-lg h-full overflow-y-auto [-webkit-app-region:no-drag] relative">
       <button
         onClick={onCollapse}
         className="absolute top-2 right-2 text-gray-400 hover:text-white focus:outline-none [-webkit-app-region:no-drag]"
@@ -68,7 +68,7 @@ function ExpandedCard({ doc, onCollapse, onCopy, onOpenFile }: ExpandedCardProps
       >
         ✕
       </button>
-      <h3 className="text-lg font-semibold mb-1">
+      <h3 className="text-lg font-semibold mb-4 pr-8">
         {doc.type}
         {doc.owner && (
           <span className={`ml-2 px-2 py-0.5 rounded-full text-sm ${getOwnerColor(doc.owner).bg} ${getOwnerColor(doc.owner).text}`}>
@@ -701,24 +701,26 @@ export default function App() {
        default:
            return (
               <div className="flex flex-col h-full">
-                  {/* Header */}
-                  <div className="flex justify-between items-center mb-4">
-                      <h1 className="text-xl font-semibold">Cocoon</h1>
-                      <div className="flex space-x-2">
-                          <button
-                              onClick={() => setViewMode('manage')}
-                              className="text-gray-400 hover:text-white focus:outline-none [-webkit-app-region:no-drag]"
-                              aria-label="Manage Documents"
-                          >
-                              📁
-                          </button>
+                  {/* Header - only show when not in expanded view */}
+                  {!expandedDocId && (
+                      <div className="flex justify-between items-center mb-4">
+                          <h1 className="text-xl font-semibold">Cocoon</h1>
+                          <div className="flex space-x-2">
+                              <button
+                                  onClick={() => setViewMode('manage')}
+                                  className="text-gray-400 hover:text-white focus:outline-none [-webkit-app-region:no-drag]"
+                                  aria-label="Manage Documents"
+                              >
+                                  📁
+                              </button>
+                          </div>
                       </div>
-                  </div>
+                  )}
                   
                   {/* Main content area (either search UI or expanded card) */}
                   {expandedDocId ? (
                       // Show expanded card when a document is selected
-                      <div className="[-webkit-app-region:no-drag]">
+                      <div className="[-webkit-app-region:no-drag] absolute inset-4">
                           <ExpandedCard
                               doc={expandedDoc!}
                               onCollapse={() => setExpandedDocId(null)}
