@@ -558,9 +558,11 @@ export default function App() {
               console.log('Documents saved successfully via IPC.');
               setError(null); // Clear error on success
           }
+          return result;
       } catch (ipcError) {
           console.error('Error sending save-documents IPC message:', ipcError);
           setError('An error occurred while trying to save documents.');
+          return { success: false, error: 'An error occurred while trying to save documents.' };
       }
   }, []);
 
@@ -573,23 +575,54 @@ export default function App() {
   }, [allDocuments, saveDocumentsIPC]);
 
   const handleSaveDocument = useCallback(async (docData: Omit<Document, 'id'> & { id?: string }) => {
-     console.log("Saving document (renderer):", docData);
-     let updatedDocs: Document[];
-     if (docData.id) { // Update existing
-        updatedDocs = allDocuments.map(doc => doc.id === docData.id ? { ...docData, id: docData.id! } as Document : doc);
-     } else { // Add new
-        const newDoc: Document = {
-            ...docData,
-            id: `doc-${Date.now()}-${Math.random().toString(36).substring(2, 8)}`,
-            isTemporary: false,
-        };
-        updatedDocs = [...allDocuments, newDoc];
+     console.log("Saving document (renderer), received:", docData);
+     try {
+        setIsLoading(true); 
+        setError(null);
+        
+        interface SaveResult { success: boolean; error?: string; }
+        let updatedDocs: Document[];
+
+        // Directly use docData received from the form
+        if (docData.id) { // Editing existing
+            // Assume docData has all necessary fields, including isTemporary
+            updatedDocs = allDocuments.map(doc => 
+              doc.id === docData.id ? { ...doc, ...docData } as Document : doc
+            );
+        } else { // Adding new
+            // Create the new document structure, ensuring default values for non-provided fields
+            const newDoc: Document = {
+              id: `doc-${Date.now()}-${Math.random().toString(36).substring(2, 8)}`,
+              type: docData.type, 
+              defaultField: docData.defaultField,
+              fields: docData.fields || {},
+              owner: docData.owner || undefined,
+              fileLink: docData.fileLink || '',
+              // Use isTemporary directly from docData, which form defaults to false if needed
+              isTemporary: docData.isTemporary || false, 
+            };
+            updatedDocs = [...allDocuments, newDoc];
+        }
+
+        // Persist changes via IPC
+        console.log("Sending updated docs to save:", updatedDocs);
+        const result: SaveResult = await saveDocumentsIPC(updatedDocs);
+
+        if (result.success) {
+           setAllDocuments(updatedDocs); // Update local state
+           setViewMode('manage'); // Go back to manage view after save
+           setDocToEdit(null);
+        } else {
+           setError(result.error || 'Failed to save document');
+           // Stay in form view on error
+        }
+     } catch (err: any) {
+        console.error('Error saving document:', err);
+        setError('An unexpected error occurred while saving: ' + err.message);
+     } finally {
+        setIsLoading(false);
      }
-     setAllDocuments(updatedDocs); // Optimistic update
-     setViewMode('manage');
-     setDocToEdit(null);
-     await saveDocumentsIPC(updatedDocs); // Persist change
-  }, [allDocuments, saveDocumentsIPC]);
+  }, [allDocuments, saveDocumentsIPC, setViewMode]);
 
   const handleCancelEdit = () => {
      setViewMode('manage');

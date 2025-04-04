@@ -1,17 +1,20 @@
 import { app, BrowserWindow, session, globalShortcut, ipcMain, shell, Menu, dialog } from 'electron';
 import * as path from 'path';
 import * as fs from 'fs';
-import { loadDocuments, saveDocuments } from './secureStore';
 import { loadSettings, saveSettings, AppSettings, DEFAULT_SETTINGS } from './settings';
+// Import the simplified store functions
+import { loadDocuments, saveDocuments } from './secureStore';
 
-// Define Document type again (needed for IPC typing)
+// Define Document type again if needed here, or import if shared
 interface DocumentField { [key: string]: string | undefined }
 interface Document {
   id: string;
   type: string;
+  owner?: string;
   defaultField: string;
   fields: DocumentField;
   fileLink: string;
+  isTemporary: boolean; 
 }
 
 declare const MAIN_WINDOW_WEBPACK_ENTRY: string;
@@ -20,106 +23,97 @@ declare const MAIN_WINDOW_PRELOAD_WEBPACK_ENTRY: string;
 let mainWindow: BrowserWindow | null = null;
 let appSettings: AppSettings = DEFAULT_SETTINGS;
 
-// Load settings on app start
+// Load settings on app start (no changes needed here)
 const loadAppSettings = () => {
   appSettings = loadSettings();
   console.log('Loaded app settings:', appSettings);
 };
 
-// Function to register global shortcut
+// Function to register global shortcut (no changes needed here)
 const registerGlobalShortcut = () => {
-  // Unregister any existing shortcuts first
   globalShortcut.unregisterAll();
-  
-  // Register the configured shortcut
   const shortcut = appSettings.globalShortcut;
   const ret = globalShortcut.register(shortcut, toggleWindow);
-  
-  if (!ret) {
-    console.error(`Global shortcut registration failed for: ${shortcut}`);
-  } else {
-    console.log(`Global shortcut registered successfully: ${shortcut}`);
-  }
+  if (!ret) { console.error(`Global shortcut registration failed for: ${shortcut}`); }
+  else { console.log(`Global shortcut registered successfully: ${shortcut}`); }
 };
 
+// Function to create the main window (no changes needed here, CSP was already simplified)
 function createWindow() {
-  console.log('Creating main window...');
+   console.log('Creating main window...');
+   const preloadScriptPath = MAIN_WINDOW_PRELOAD_WEBPACK_ENTRY;
+   console.log('Preload script path:', preloadScriptPath);
 
-  const preloadScriptPath = MAIN_WINDOW_PRELOAD_WEBPACK_ENTRY;
-  console.log('Preload script path:', preloadScriptPath);
+   const webPreferencesConfig = {
+     nodeIntegration: false,
+     contextIsolation: true,
+     preload: preloadScriptPath,
+     webSecurity: true,
+     sandbox: false
+   };
 
-  const webPreferencesConfig = {
-    nodeIntegration: false,
-    contextIsolation: true,
-    preload: preloadScriptPath,
-    webSecurity: true,
-    sandbox: false
-  };
+   mainWindow = new BrowserWindow({
+     width: 600,
+     height: 400,
+     show: false,
+     frame: false,
+     transparent: true,
+     alwaysOnTop: true,
+     webPreferences: webPreferencesConfig,
+   });
 
-  mainWindow = new BrowserWindow({
-    width: 600,
-    height: 400,
-    show: false,
-    frame: false,
-    transparent: true,
-    alwaysOnTop: true,
-    webPreferences: webPreferencesConfig,
-  });
+   // Load the index.html of the app.
+   console.log(`Loading URL: ${MAIN_WINDOW_WEBPACK_ENTRY}`);
+   mainWindow.loadURL(MAIN_WINDOW_WEBPACK_ENTRY);
 
-  // Load the index.html of the app.
-  console.log(`Loading URL: ${MAIN_WINDOW_WEBPACK_ENTRY}`);
-  mainWindow.loadURL(MAIN_WINDOW_WEBPACK_ENTRY);
+   // Configure CSP
+   session.defaultSession.webRequest.onHeadersReceived((details, callback) => {
+     callback({
+       responseHeaders: {
+         ...details.responseHeaders,
+         'Content-Security-Policy': [
+           !app.isPackaged 
+             ? "default-src 'self' 'unsafe-inline' data:; script-src 'self' 'unsafe-eval' 'unsafe-inline' data:; connect-src 'self' http://localhost:* ws://localhost:*; style-src 'self' 'unsafe-inline';"
+             : "default-src 'self' 'unsafe-inline' data:; script-src 'self' 'unsafe-inline' data:; style-src 'self' 'unsafe-inline';"
+         ]
+       }
+     });
+   });
 
-  // Configure CSP
-  session.defaultSession.webRequest.onHeadersReceived((details, callback) => {
-    callback({
-      responseHeaders: {
-        ...details.responseHeaders,
-        'Content-Security-Policy': [
-          !app.isPackaged
-            ? "default-src 'self' 'unsafe-inline' data:; script-src 'self' 'unsafe-eval' 'unsafe-inline' data:; connect-src 'self' http://localhost:* ws://localhost:*; style-src 'self' 'unsafe-inline';"
-            : "default-src 'self' 'unsafe-inline' data:; script-src 'self' 'unsafe-inline' data:; style-src 'self' 'unsafe-inline';"
-        ]
-      }
-    });
-  });
+   // Open DevTools only when not packaged
+   if (!app.isPackaged) {
+     console.log('Opening DevTools...');
+     mainWindow.webContents.openDevTools({ mode: 'detach' });
+   }
 
-  // Open DevTools only when not packaged (i.e., in development)
-  if (!app.isPackaged) {
-    console.log('Opening DevTools...');
-    mainWindow.webContents.openDevTools({ mode: 'detach' });
-  }
+   mainWindow.webContents.on('did-finish-load', () => {
+     console.log('Window loaded, checking if preload APIs are available...');
+     mainWindow?.webContents.executeJavaScript(`
+       console.log('Window APIs:', {
+         electronClipboard: typeof window.electronClipboard,
+         ipc: typeof window.ipc
+       });
+     `);
+     // Optionally, send initial documents on load?
+     // Or wait for renderer to request them.
+   });
 
-  mainWindow.webContents.on('did-finish-load', () => {
-    console.log('Window loaded, checking if preload APIs are available...');
-    mainWindow?.webContents.executeJavaScript(`
-      console.log('Window APIs:', {
-        electronClipboard: typeof window.electronClipboard,
-        ipc: typeof window.ipc
-      });
-    `);
-    // Optionally, send initial documents on load?
-    // Or wait for renderer to request them.
-  });
+   mainWindow.on('closed', () => { mainWindow = null; });
 
-  mainWindow.on('closed', () => {
-    console.log('Main window closed.');
-    mainWindow = null;
-  });
+   mainWindow.on('blur', () => { // Hide on blur
+     // Add a small delay before hiding to allow external actions (like opening a link) to complete
+     setTimeout(() => {
+          if (mainWindow && !mainWindow.webContents.isDevToolsFocused()) {
+             console.log('Main window blurred, hiding after delay...');
+             mainWindow.hide();
+          }
+     }, 150); // 150ms delay
+   });
 
-  mainWindow.on('blur', () => { // Hide on blur
-    // Add a small delay before hiding to allow external actions (like opening a link) to complete
-    setTimeout(() => {
-         if (mainWindow && !mainWindow.webContents.isDevToolsFocused()) {
-            console.log('Main window blurred, hiding after delay...');
-            mainWindow.hide();
-         }
-    }, 150); // 150ms delay
-  });
-
-  console.log('Main window created successfully.');
+   console.log('Main window created successfully.');
 }
 
+// Function to toggle window (no changes needed here)
 function toggleWindow() {
   console.log('toggleWindow function called.'); // Log toggle function call
   if (!mainWindow) {
@@ -137,7 +131,7 @@ function toggleWindow() {
   }
 }
 
-// Create a custom application menu
+// Function to create app menu (no changes needed here)
 function createAppMenu() {
   const isMac = process.platform === 'darwin';
   
@@ -209,19 +203,28 @@ function createAppMenu() {
   Menu.setApplicationMenu(menu);
 }
 
-// --- IPC Handlers ---
+// Function to apply settings (simplified - no tray logic needed)
+function applyAppSettings() {
+  app.setLoginItemSettings({ openAtLogin: appSettings.launchAtStartup });
+  console.log(`Launch at startup set to: ${appSettings.launchAtStartup}`);
+  if (process.platform === 'darwin') {
+    if (appSettings.showInDock) { app.dock.show(); } else { app.dock.hide(); }
+  }
+}
+
+// --- IPC Handlers (Reverted to simple versions) ---
 
 // Handle request to load documents
-ipcMain.handle('load-documents', async (event) => {
+ipcMain.handle('load-documents', async () => {
   try {
     console.log('[IPC] Received load-documents request');
-    const documents = await loadDocuments();
+    // Use the simplified loadDocuments from secureStore
+    const documents = await loadDocuments(); 
     console.log(`[IPC] Sending ${documents.length} documents to renderer.`);
     return documents;
   } catch (error) {
     console.error('[IPC] Error loading documents:', error);
-    // Consider sending error back to renderer
-    return []; // Return empty array on error for now
+    return []; // Return empty array on error
   }
 });
 
@@ -229,7 +232,8 @@ ipcMain.handle('load-documents', async (event) => {
 ipcMain.handle('save-documents', async (event, documents: Document[]) => {
   try {
     console.log(`[IPC] Received save-documents request with ${documents.length} documents.`);
-    await saveDocuments(documents);
+    // Use the simplified saveDocuments from secureStore
+    await saveDocuments(documents); 
     console.log('[IPC] Documents saved successfully.');
     return { success: true };
   } catch (error) {
@@ -238,37 +242,25 @@ ipcMain.handle('save-documents', async (event, documents: Document[]) => {
   }
 });
 
-// Handle request to get settings
-ipcMain.handle('get-settings', async () => {
-  return appSettings;
-});
-
-// Handle request to save settings
+// Handle settings IPC (no changes needed here)
+ipcMain.handle('get-settings', async () => { return appSettings; });
 ipcMain.handle('save-settings', async (event, newSettings: AppSettings) => {
-  try {
-    console.log(`[IPC] Received save-settings request:`, newSettings);
-    
-    // Save the new settings
+  // ... (save logic, update appSettings, call applyAppSettings, register shortcut) ...
+   try {
     const success = saveSettings(newSettings);
-    if (!success) {
-      throw new Error('Failed to save settings');
-    }
-    
-    // Update our in-memory settings
+    if (!success) { throw new Error('Failed to save settings file'); }
     appSettings = newSettings;
-    
-    // If the shortcut changed, re-register it
-    registerGlobalShortcut();
-    
-    console.log('[IPC] Settings saved successfully.');
+    applyAppSettings();
+    registerGlobalShortcut(); 
+    console.log('[IPC] Settings saved and applied successfully.');
     return { success: true };
   } catch (error) {
-    console.error('[IPC] Error saving settings:', error);
+    console.error('[IPC] Error saving/applying settings:', error);
     return { success: false, error: (error as Error).message };
   }
 });
 
-// Handle request to hide the window
+// Handle other IPC (hide-window, open-external-link) (no changes needed)
 ipcMain.on('hide-window', (event) => {
     console.log('[IPC] Received hide-window request');
     if (mainWindow) {
@@ -345,37 +337,23 @@ ipcMain.on('open-external-link', async (event, url: string) => {
     }
 });
 
-// --- App Lifecycle Events ---
+// --- App Lifecycle Events (Simplified Startup) ---
 
 app.on('ready', () => {
   console.log('App ready, loading settings and creating window...');
-  
-  // Load settings first
   loadAppSettings();
-  
-  // Create the app window
-  createWindow();
-  
-  // Create custom app menu
+  applyAppSettings(); // Apply initial settings
+  createWindow(); // Create window directly
   createAppMenu();
-  
-  // Register the global shortcut from settings
   registerGlobalShortcut();
 });
 
 app.on('window-all-closed', () => {
-  console.log('All windows closed.');
-  if (process.platform !== 'darwin') {
-    app.quit();
-  }
+  if (process.platform !== 'darwin') { app.quit(); }
 });
 
 app.on('activate', () => {
-  console.log('App activated.');
-  if (BrowserWindow.getAllWindows().length === 0) {
-    console.log('No windows open, creating new one.');
-    createWindow();
-  }
+  if (BrowserWindow.getAllWindows().length === 0) { createWindow(); }
 });
 
 app.on('will-quit', () => {
