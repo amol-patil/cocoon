@@ -11,6 +11,9 @@ module.exports = {
     appCopyright: 'Copyright © 2023 PixelPieCo',
     osxSign: false,  // Disable code signing completely
     mas: false,      // Explicitly set not for Mac App Store
+    env: {
+      NODE_ENV: 'production'
+    },
     // Name that shows in the Dock
     executableName: 'Cocoon',
     // Add info.plist settings
