@@ -143,13 +143,51 @@ ipcMain.handle('save-documents', async (event, documents: Document[]) => {
   }
 });
 
-// Handle request to open external link
-ipcMain.on('open-external-link', (event, url: string) => {
+// Handle request to open external link using child_process for macOS
+ipcMain.on('open-external-link', async (event, url: string) => {
     if (url && (url.startsWith('http://') || url.startsWith('https://'))) {
-        console.log(`[IPC] Opening external link: ${url}`);
-        shell.openExternal(url);
+        try {
+            console.log(`[IPC] Opening external URL with custom approach: ${url}`);
+            
+            // For macOS: Use open command with specific options to force foreground
+            if (process.platform === 'darwin') {
+                const { exec } = require('child_process');
+                
+                // Escape URL for shell command
+                const escapedUrl = url.replace(/"/g, '\\"');
+                
+                // -g = open in foreground, but remove the -a "Safari" to use default browser
+                const command = `open -g "${escapedUrl}"`;
+                
+                exec(command, (error: any, stdout: string, stderr: string) => {
+                    if (error) {
+                        console.error(`[IPC] Error opening URL with open command: ${error.message}`);
+                        event.sender.send('open-link-error', `Failed to open: ${error.message}`);
+                        
+                        // Fallback to shell.openExternal
+                        console.log('[IPC] Attempting fallback with shell.openExternal');
+                        shell.openExternal(url, { activate: true });
+                        return;
+                    }
+                    
+                    if (stderr) {
+                        console.warn(`[IPC] Warning when opening URL: ${stderr}`);
+                    }
+                    
+                    console.log(`[IPC] URL opened successfully with open command: ${url}`);
+                });
+            } else {
+                // For non-macOS: Use standard shell.openExternal
+                await shell.openExternal(url, { activate: true });
+                console.log(`[IPC] URL opened successfully with shell.openExternal: ${url}`);
+            }
+        } catch (error) {
+            console.error(`[IPC] Failed to open URL ${url}:`, error);
+            event.sender.send('open-link-error', (error as Error).message);
+        }
     } else {
         console.warn(`[IPC] Received invalid URL to open: ${url}`);
+        event.sender.send('open-link-error', 'Invalid URL format');
     }
 });
 
