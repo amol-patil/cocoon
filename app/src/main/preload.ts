@@ -13,7 +13,7 @@ const electronAPI = {
   ipc: {
     // Send (fire-and-forget)
     send: (channel: string, data: any) => {
-      const validSendChannels = ['open-external-link']; // Whitelist send channels
+      const validSendChannels = ['open-external-link', 'hide-window']; // Whitelist send channels
       if (validSendChannels.includes(channel)) {
         ipcRenderer.send(channel, data);
       } else {

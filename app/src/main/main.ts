@@ -191,6 +191,14 @@ ipcMain.on('open-external-link', async (event, url: string) => {
     }
 });
 
+// Handle request to hide the window
+ipcMain.on('hide-window', (event) => {
+    console.log('[IPC] Received hide-window request');
+    if (mainWindow) {
+        mainWindow.hide();
+    }
+});
+
 // --- App Lifecycle Events ---
 
 app.on('ready', () => {

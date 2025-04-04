@@ -101,10 +101,22 @@ interface ManageDocumentsViewProps {
   onEdit: (doc: Document) => void;
   onDelete: (id: string) => void;
   onBack: () => void;
+  onEscape: () => void;
 }
-function ManageDocumentsView({ documents, onAdd, onEdit, onDelete, onBack }: ManageDocumentsViewProps) {
+function ManageDocumentsView({ documents, onAdd, onEdit, onDelete, onBack, onEscape }: ManageDocumentsViewProps) {
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === 'Escape') {
+      e.preventDefault();
+      onEscape();
+    }
+  };
+
   return (
-    <div className="p-4 flex flex-col h-full [-webkit-app-region:no-drag]">
+    <div 
+      className="p-4 flex flex-col h-full [-webkit-app-region:no-drag]" 
+      onKeyDown={handleKeyDown}
+      tabIndex={-1}
+    >
       <div className="flex justify-between items-center mb-4">
         <h2 className="text-xl font-semibold">Manage Documents</h2>
         <button onClick={onBack} className="text-sm text-blue-400 hover:text-blue-300 focus:outline-none">← Back to Search</button>
@@ -144,9 +156,10 @@ interface DocumentFormProps {
     documentToEdit: (Omit<Document, 'id'> & { id?: string }) | null;
     onSave: (docData: Omit<Document, 'id'> & { id?: string }) => void;
     onCancel: () => void;
+    onEscape: () => void;
 }
 
-function DocumentForm({ documentToEdit, onSave, onCancel }: DocumentFormProps) {
+function DocumentForm({ documentToEdit, onSave, onCancel, onEscape }: DocumentFormProps) {
     const [type, setType] = useState('');
     const [owner, setOwner] = useState('');
     const [defaultField, setDefaultField] = useState('');
@@ -204,8 +217,20 @@ function DocumentForm({ documentToEdit, onSave, onCancel }: DocumentFormProps) {
         onSave(docData);
     };
 
+    const handleKeyDown = (e: React.KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        e.preventDefault();
+        onCancel();
+      }
+    };
+
     return (
-        <form onSubmit={handleSubmit} className="p-4 space-y-4 flex flex-col h-full [-webkit-app-region:no-drag]">
+        <form 
+          onSubmit={handleSubmit} 
+          className="p-4 space-y-4 flex flex-col h-full [-webkit-app-region:no-drag]"
+          onKeyDown={handleKeyDown}
+          tabIndex={-1}
+        >
             <h2 className="text-xl font-semibold mb-4 flex-shrink-0">
                 {documentToEdit ? 'Edit Document' : 'Add New Document'}
             </h2>
@@ -490,18 +515,70 @@ function App() {
     window.ipc.send('open-external-link', link);
   }, []);
 
+  // Hide window function
+  const hideWindow = useCallback(() => {
+    console.log("Hiding window via IPC");
+    window.ipc.send('hide-window');
+  }, []);
+
+  // Add a global document-level event listener for Escape key
+  useEffect(() => {
+    const handleGlobalEscape = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        e.preventDefault();
+        console.log('Global Escape key pressed');
+        
+        // For expanded card view, just collapse
+        if (viewMode === 'search' && expandedDocId) {
+          setExpandedDocId(null);
+        } 
+        // For edit form, just cancel edit
+        else if (viewMode === 'editForm') {
+          handleCancelEdit();
+        } 
+        // In all other cases, hide the window
+        else {
+          hideWindow();
+        }
+      }
+    };
+
+    // Add the event listener
+    document.addEventListener('keydown', handleGlobalEscape);
+    
+    // Clean up the event listener on component unmount
+    return () => {
+      document.removeEventListener('keydown', handleGlobalEscape);
+    };
+  }, [viewMode, expandedDocId, handleCancelEdit, hideWindow]);
+
   // === Keyboard Handler ===
   const handleKeyDown = useCallback((event: React.KeyboardEvent) => {
-    // Handle keys differently based on view mode
+    // First handle Escape key globally to dismiss window regardless of view
+    if (event.key === 'Escape') {
+      event.preventDefault();
+      // For expanded card view, just collapse instead of hiding window
+      if (viewMode === 'search' && expandedDocId) {
+        setExpandedDocId(null);
+      } else if (viewMode === 'editForm') {
+        // For edit form, just cancel the edit
+        handleCancelEdit();
+      } else {
+        // In all other cases, hide the window
+        hideWindow();
+      }
+      return;
+    }
+
+    // Handle other keys based on view mode
     if (viewMode === 'search') {
         // --- Search Mode Key Handling ---
         if (expandedDocId) {
             // Expanded View Active
-            if (event.key === 'Escape' || event.key === 'ArrowLeft') {
+            if (event.key === 'ArrowLeft') {
                 event.preventDefault();
                 setExpandedDocId(null); // Collapse
             }
-            // Add other keybinds for expanded view if needed (e.g., copy fields)
         } else {
             // List View Active
             if (searchResults.length === 0) return;
@@ -529,18 +606,10 @@ function App() {
                         else console.log(`Default field '${item.defaultField}' not found.`);
                     }
                     break;
-                // Add Shift+Number handlers here later if desired
             }
         }
-    } else if (viewMode === 'manage') {
-        // TODO: Add keyboard navigation for manage view? (e.g., focus buttons)
-    } else if (viewMode === 'editForm') {
-        // Prevent Enter from submitting forms accidentally if needed, or handle Escape key
-        if (event.key === 'Escape') {
-            handleCancelEdit();
-        }
     }
-  }, [viewMode, searchResults, selectedIndex, expandedDocId, handleCopy, handleCancelEdit]); // Dependencies
+  }, [viewMode, searchResults, selectedIndex, expandedDocId, handleCopy, handleCancelEdit, hideWindow]);
 
   // === Render Logic ===
   const renderContent = () => {
@@ -563,6 +632,7 @@ function App() {
                     onEdit={handleEditDocument}
                     onDelete={handleDeleteDocument}
                     onBack={() => setViewMode('search')}
+                    onEscape={hideWindow}
                 />
             );
         case 'editForm':
@@ -571,6 +641,7 @@ function App() {
                     documentToEdit={docToEdit}
                     onSave={handleSaveDocument}
                     onCancel={handleCancelEdit}
+                    onEscape={hideWindow}
                 />
             );
         case 'search':
@@ -647,8 +718,12 @@ function App() {
   };
 
   return (
-    // Apply drag region to the main app container
-    <div className="flex flex-col h-screen p-4 bg-gradient-to-r from-blue-950 via-purple-950 to-indigo-950 text-white rounded-lg shadow-xl overflow-hidden relative [-webkit-app-region:drag]">
+    // Apply drag region to the main app container and add keyDown handler
+    <div 
+      className="flex flex-col h-screen p-4 bg-gradient-to-r from-blue-950 via-purple-950 to-indigo-950 text-white rounded-lg shadow-xl overflow-hidden relative [-webkit-app-region:drag]"
+      onKeyDown={handleKeyDown}
+      tabIndex={-1} // Allow div to receive keyboard focus
+    >
        {renderContent()}
     </div>
   );
