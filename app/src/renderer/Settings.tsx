@@ -4,7 +4,6 @@ import React, { useState, useEffect } from 'react';
 interface AppSettings {
   globalShortcut: string;
   defaultBrowser: string;
-  theme: 'dark' | 'light' | 'system';
 }
 
 interface SettingsViewProps {
@@ -15,8 +14,7 @@ export default function SettingsView({ onBack }: SettingsViewProps) {
   const [isLoading, setIsLoading] = useState(true);
   const [settings, setSettings] = useState<AppSettings>({
     globalShortcut: 'CommandOrControl+Option+Space',
-    defaultBrowser: 'chrome',
-    theme: 'dark'
+    defaultBrowser: 'chrome'
   });
   const [shortcutInput, setShortcutInput] = useState('');
   const [isSaving, setIsSaving] = useState(false);
@@ -100,14 +98,6 @@ export default function SettingsView({ onBack }: SettingsViewProps) {
     });
   };
 
-  // Handle theme selection
-  const handleThemeChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
-    setSettings({
-      ...settings,
-      theme: e.target.value as 'dark' | 'light' | 'system'
-    });
-  };
-
   if (isLoading) {
     return (
       <div className="flex items-center justify-center h-full">
@@ -165,24 +155,6 @@ export default function SettingsView({ onBack }: SettingsViewProps) {
                 {option.label}
               </option>
             ))}
-          </select>
-        </div>
-
-        {/* Theme setting */}
-        <div className="space-y-2">
-          <h3 className="text-md font-medium text-gray-200">Theme</h3>
-          <p className="text-sm text-gray-400">
-            Choose the app appearance
-          </p>
-          <select
-            value={settings.theme}
-            onChange={handleThemeChange}
-            className="w-full px-3 py-2 text-white bg-white/10 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 appearance-none"
-            style={{ backgroundImage: `url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%236b7280' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3e%3c/svg%3e")`, backgroundPosition: `right 0.5rem center`, backgroundRepeat: `no-repeat`, backgroundSize: `1.5em 1.5em` }}
-          >
-            <option value="dark">Dark</option>
-            <option value="light">Light</option>
-            <option value="system">Use System Setting</option>
           </select>
         </div>
       </div>

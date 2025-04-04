@@ -7,14 +7,12 @@ import * as isDev from 'electron-is-dev';
 export interface AppSettings {
   globalShortcut: string;
   defaultBrowser: string; // 'system', 'chrome', 'firefox', 'safari', etc.
-  theme: 'dark' | 'light' | 'system';
 }
 
 // Default settings
 export const DEFAULT_SETTINGS: AppSettings = {
   globalShortcut: 'CommandOrControl+Option+Space',
   defaultBrowser: 'chrome',
-  theme: 'dark',
 };
 
 // Get the user data path
