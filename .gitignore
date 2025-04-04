@@ -19,4 +19,4 @@ out/
 # Env Files
 .env
 .env.*
-!.env.example 
+!.env.example app/userData/
