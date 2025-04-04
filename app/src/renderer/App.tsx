@@ -43,10 +43,10 @@ interface ExpandedCardProps {
 }
 function ExpandedCard({ doc, onCollapse, onCopy, onOpenFile }: ExpandedCardProps) {
   return (
-    <div className="p-4 bg-white/10 rounded-lg absolute inset-0 overflow-y-auto">
+    <div className="p-4 bg-white/10 rounded-lg absolute inset-0 overflow-y-auto [-webkit-app-region:no-drag]">
       <button
         onClick={onCollapse}
-        className="absolute top-2 right-2 text-gray-400 hover:text-white focus:outline-none"
+        className="absolute top-2 right-2 text-gray-400 hover:text-white focus:outline-none [-webkit-app-region:no-drag]"
         aria-label="Close details"
       >
         ✕
@@ -64,7 +64,7 @@ function ExpandedCard({ doc, onCollapse, onCopy, onOpenFile }: ExpandedCardProps
                 <span className="text-sm text-white truncate max-w-xs">{value}</span>
                 <button
                   onClick={() => onCopy(value)}
-                  className="text-gray-400 hover:text-blue-400 opacity-0 group-hover:opacity-100 transition-opacity focus:outline-none"
+                  className="text-gray-400 hover:text-blue-400 opacity-0 group-hover:opacity-100 transition-opacity focus:outline-none [-webkit-app-region:no-drag]"
                   aria-label={`Copy ${key}`}
                 >
                   📋
@@ -77,7 +77,7 @@ function ExpandedCard({ doc, onCollapse, onCopy, onOpenFile }: ExpandedCardProps
           <li className="pt-3 mt-3 border-t border-white/20">
              <button
                 onClick={() => onOpenFile(doc.fileLink)}
-                className="w-full text-left text-blue-400 hover:text-blue-300 focus:outline-none flex items-center"
+                className="w-full text-left text-blue-400 hover:text-blue-300 focus:outline-none flex items-center [-webkit-app-region:no-drag]"
              >
                <span className="mr-2">📁</span> Open Linked File
              </button>
@@ -86,7 +86,7 @@ function ExpandedCard({ doc, onCollapse, onCopy, onOpenFile }: ExpandedCardProps
       </ul>
        <button
           onClick={onCollapse}
-          className="mt-4 text-sm text-gray-400 hover:text-white focus:outline-none"
+          className="mt-4 text-sm text-gray-400 hover:text-white focus:outline-none [-webkit-app-region:no-drag]"
         >
           ← Back to results
         </button>
