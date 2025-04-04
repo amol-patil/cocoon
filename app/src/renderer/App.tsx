@@ -236,40 +236,6 @@ function DocumentForm({ documentToEdit, onSave, onCancel }: DocumentFormProps) {
                     </div>
                 </div>
 
-                <div>
-                    <label htmlFor="defaultField" className="block text-sm font-medium text-gray-300 mb-1">Default Field Key</label>
-                    <select
-                        id="defaultField"
-                        value={defaultField}
-                        onChange={(e) => setDefaultField(e.target.value)}
-                        className="w-full px-3 py-2 text-white bg-white/10 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 appearance-none"
-                        style={{ backgroundImage: `url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%236b7280' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3e%3c/svg%3e")`, backgroundPosition: `right 0.5rem center`, backgroundRepeat: `no-repeat`, backgroundSize: `1.5em 1.5em` }}
-                        required
-                    >
-                        <option value="">-- Select Default Field --</option>
-                        {fields.map((field, index) => (
-                            field.key.trim() && (
-                                <option key={`${field.key}-${index}`} value={field.key.trim()}>
-                                    {field.key.trim()}
-                                </option>
-                            )
-                        ))}
-                    </select>
-                    <p className="text-xs text-gray-500 mt-1">Which field value should be copied when pressing Enter?</p>
-                </div>
-
-                <div>
-                    <label htmlFor="fileLink" className="block text-sm font-medium text-gray-300 mb-1">Google Drive Link (Optional)</label>
-                    <input
-                        id="fileLink"
-                        type="url"
-                        placeholder="https://drive.google.com/file/d/..."
-                        value={fileLink}
-                        onChange={(e) => setFileLink(e.target.value)}
-                        className="w-full px-3 py-2 text-white bg-white/10 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    />
-                </div>
-
                 <h3 className="text-lg font-medium text-gray-200 pt-2">Fields</h3>
                 {fields.map((field, index) => (
                     <div key={index} className="flex items-center space-x-2">
@@ -304,6 +270,40 @@ function DocumentForm({ documentToEdit, onSave, onCancel }: DocumentFormProps) {
                 >
                     + Add Field
                 </button>
+
+                <div>
+                    <label htmlFor="defaultField" className="block text-sm font-medium text-gray-300 mb-1">Default Field Key</label>
+                    <select
+                        id="defaultField"
+                        value={defaultField}
+                        onChange={(e) => setDefaultField(e.target.value)}
+                        className="w-full px-3 py-2 text-white bg-white/10 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 appearance-none"
+                        style={{ backgroundImage: `url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%236b7280' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3e%3c/svg%3e")`, backgroundPosition: `right 0.5rem center`, backgroundRepeat: `no-repeat`, backgroundSize: `1.5em 1.5em` }}
+                        required
+                    >
+                        <option value="">-- Select Default Field --</option>
+                        {fields.map((field, index) => (
+                            field.key.trim() && (
+                                <option key={`${field.key}-${index}`} value={field.key.trim()}>
+                                    {field.key.trim()}
+                                </option>
+                            )
+                        ))}
+                    </select>
+                    <p className="text-xs text-gray-500 mt-1">Which field value should be copied when pressing Enter?</p>
+                </div>
+
+                <div>
+                    <label htmlFor="fileLink" className="block text-sm font-medium text-gray-300 mb-1">Google Drive Link (Optional)</label>
+                    <input
+                        id="fileLink"
+                        type="url"
+                        placeholder="https://drive.google.com/file/d/..."
+                        value={fileLink}
+                        onChange={(e) => setFileLink(e.target.value)}
+                        className="w-full px-3 py-2 text-white bg-white/10 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    />
+                </div>
             </div>
 
             <div className="flex justify-end space-x-3 pt-4 flex-shrink-0">
