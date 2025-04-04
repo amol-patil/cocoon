@@ -26,7 +26,11 @@ interface Document {
 }
 
 // --- Configuration ---
-const DB_FILENAME = 'cocoon_data.enc';
+const IS_DEV = !app.isPackaged; // Check if running in development
+const DB_FILENAME = IS_DEV ? 'cocoon_data-dev.enc' : 'cocoon_data.enc';
+console.log(`Running in ${IS_DEV ? 'DEVELOPMENT' : 'PRODUCTION'} mode.`);
+console.log(`Using data file: ${DB_FILENAME}`);
+
 const ALGORITHM = 'aes-256-gcm';
 const IV_LENGTH = 16; // For AES-GCM
 const TAG_LENGTH = 16; // For AES-GCM auth tag

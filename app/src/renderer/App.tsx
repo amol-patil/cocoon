@@ -11,6 +11,7 @@ interface Document {
   defaultField: string;
   fields: DocumentField;
   fileLink: string;
+  isTemporary: boolean;
 }
 
 // Owner color mapping
@@ -125,6 +126,8 @@ interface ManageDocumentsViewProps {
   onEscape: () => void;
 }
 function ManageDocumentsView({ documents, onAdd, onEdit, onDelete, onBack, onEscape }: ManageDocumentsViewProps) {
+  const [activeTab, setActiveTab] = useState<'permanent' | 'temporary'>('permanent');
+
   const handleKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === 'Escape') {
       e.preventDefault();
@@ -132,24 +135,51 @@ function ManageDocumentsView({ documents, onAdd, onEdit, onDelete, onBack, onEsc
     }
   };
 
+  // Filter documents based on the active tab
+  const filteredDocs = useMemo(() => {
+      return documents.filter(doc => 
+         activeTab === 'temporary' ? doc.isTemporary : !doc.isTemporary
+      );
+  }, [documents, activeTab]);
+
   return (
     <div 
       className="p-4 flex flex-col h-full [-webkit-app-region:no-drag]" 
       onKeyDown={handleKeyDown}
       tabIndex={-1}
+      ref={el => el?.focus()} // Auto-focus for Escape key
     >
+      {/* Header */}
       <div className="flex justify-between items-center mb-4">
         <h2 className="text-xl font-semibold">Manage Documents</h2>
-        <div className="flex space-x-2">
-          <button onClick={onBack} className="text-sm text-blue-400 hover:text-blue-300 focus:outline-none">← Back to Search</button>
-        </div>
+        <button onClick={onBack} className="text-sm text-blue-400 hover:text-blue-300 focus:outline-none">← Back to Search</button>
       </div>
-      <div className="flex-grow overflow-y-auto mb-4">
-        {documents.length === 0 ? (
-          <p className="text-gray-500 text-center mt-4">No documents saved yet.</p>
+      
+      {/* Tabs */}
+      <div className="flex mb-4 border-b border-white/10">
+        <button 
+          onClick={() => setActiveTab('permanent')}
+          className={`px-4 py-2 text-sm focus:outline-none ${activeTab === 'permanent' ? 'text-white border-b-2 border-blue-500' : 'text-gray-400 hover:text-gray-200'}`}
+        >
+          Permanent
+        </button>
+        <button 
+          onClick={() => setActiveTab('temporary')}
+          className={`px-4 py-2 text-sm focus:outline-none ${activeTab === 'temporary' ? 'text-white border-b-2 border-blue-500' : 'text-gray-400 hover:text-gray-200'}`}
+        >
+          Temporary
+        </button>
+      </div>
+
+      {/* Document List */}
+      <div className="flex-grow overflow-y-auto mb-4 pr-1">
+        {filteredDocs.length === 0 ? (
+          <p className="text-gray-500 text-center mt-4">
+             No {activeTab} documents saved yet.
+          </p>
         ) : (
           <ul className="space-y-2">
-            {documents.map(doc => (
+            {filteredDocs.map(doc => (
               <li key={doc.id} className="p-3 bg-white/5 rounded flex justify-between items-center">
                 <span className="font-medium truncate mr-4">
                   {doc.type}
@@ -164,9 +194,11 @@ function ManageDocumentsView({ documents, onAdd, onEdit, onDelete, onBack, onEsc
           </ul>
         )}
       </div>
+      
+      {/* Add Button */}
       <button
         onClick={onAdd}
-        className="w-full py-2 px-4 bg-green-600 hover:bg-green-500 rounded text-white font-semibold focus:outline-none focus:ring-2 focus:ring-green-400"
+        className="w-full py-2 px-4 bg-green-600 hover:bg-green-500 rounded text-white font-semibold focus:outline-none focus:ring-2 focus:ring-green-400 flex-shrink-0"
       >
         + Add New Document
       </button>
@@ -176,7 +208,7 @@ function ManageDocumentsView({ documents, onAdd, onEdit, onDelete, onBack, onEsc
 
 // Document Form Component
 interface DocumentFormProps {
-    documentToEdit: (Omit<Document, 'id'> & { id?: string }) | null;
+    documentToEdit: (Omit<Document, 'id' | 'isTemporary'> & { id?: string; isTemporary?: boolean }) | null;
     onSave: (docData: Omit<Document, 'id'> & { id?: string }) => void;
     onCancel: () => void;
     onEscape: () => void;
@@ -188,6 +220,7 @@ function DocumentForm({ documentToEdit, onSave, onCancel, onEscape }: DocumentFo
     const [defaultField, setDefaultField] = useState('');
     const [fileLink, setFileLink] = useState('');
     const [fields, setFields] = useState<{ key: string; value: string }[]>([{ key: '', value: '' }]);
+    const [isTemporary, setIsTemporary] = useState(false);
 
     useEffect(() => {
         if (documentToEdit) {
@@ -196,12 +229,14 @@ function DocumentForm({ documentToEdit, onSave, onCancel, onEscape }: DocumentFo
             setDefaultField(documentToEdit.defaultField || '');
             setFileLink(documentToEdit.fileLink || '');
             setFields(Object.entries(documentToEdit.fields || {}).map(([key, value]) => ({ key, value: value || '' })));
+            setIsTemporary(documentToEdit.isTemporary || false);
         } else {
             setType('');
             setOwner('');
             setDefaultField('');
             setFileLink('');
             setFields([{ key: '', value: '' }]);
+            setIsTemporary(false);
         }
     }, [documentToEdit]);
 
@@ -241,14 +276,15 @@ function DocumentForm({ documentToEdit, onSave, onCancel, onEscape }: DocumentFo
             }
         });
         
-        // Return document with all required properties
+        // Include isTemporary in the saved data
         const docData = {
             id: documentToEdit?.id,
-            type,
+            type: type.trim(),
             owner: owner.trim() || undefined,
-            defaultField,
-            fileLink,
+            defaultField: defaultField.trim(),
+            fileLink: fileLink.trim(),
             fields: fieldsObject,
+            isTemporary: isTemporary,
         };
         
         onSave(docData);
@@ -257,7 +293,7 @@ function DocumentForm({ documentToEdit, onSave, onCancel, onEscape }: DocumentFo
     const handleKeyDown = (e: React.KeyboardEvent) => {
       if (e.key === 'Escape') {
         e.preventDefault();
-        onCancel();
+        onEscape();
       }
     };
 
@@ -366,6 +402,18 @@ function DocumentForm({ documentToEdit, onSave, onCancel, onEscape }: DocumentFo
                         className="w-full px-3 py-2 text-white bg-white/10 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                     />
                 </div>
+
+                <div className="pt-4">
+                    <label className="flex items-center space-x-2 cursor-pointer">
+                        <input 
+                            type="checkbox" 
+                            checked={isTemporary} 
+                            onChange={(e) => setIsTemporary(e.target.checked)} 
+                            className="form-checkbox h-4 w-4 text-blue-600 bg-gray-700 border-gray-600 rounded focus:ring-blue-500"
+                        />
+                        <span className="text-sm text-gray-300">Temporary Item</span>
+                    </label>
+                </div>
             </div>
 
             <div className="flex justify-end space-x-3 pt-4 flex-shrink-0">
@@ -393,7 +441,7 @@ type AppViewMode = 'search' | 'manage' | 'editForm' | 'settings';
 // --- Main App Component ---
 export default function App() {
   // === State ===
-  const [documents, setDocuments] = useState<Document[]>([]); // Initialize empty, load from IPC
+  const [allDocuments, setAllDocuments] = useState<Document[]>([]);
   const [isLoading, setIsLoading] = useState(true); // Loading state
   const [error, setError] = useState<string | null>(null); // Error state
   const [searchTerm, setSearchTerm] = useState('');
@@ -402,8 +450,11 @@ export default function App() {
   const [viewMode, setViewMode] = useState<AppViewMode>('search');
   const [docToEdit, setDocToEdit] = useState<Document | null>(null);
 
-  // Re-initialize Fuse when documents change
-  const fuse = useMemo(() => new Fuse(documents, fuseOptions), [documents]);
+  // Re-initialize Fuse when documents change (use all documents)
+  const fuse = useMemo(() => {
+      console.log(`Rebuilding Fuse index with ${allDocuments.length} documents.`);
+      return new Fuse(allDocuments, fuseOptions); // Use allDocuments directly
+  }, [allDocuments]); // Depend on all documents
 
   // === Data Loading Effect ===
   useEffect(() => {
@@ -412,13 +463,13 @@ export default function App() {
     window.ipc.invoke<Document[]>('load-documents')
       .then((loadedDocs) => {
         console.log(`Received ${loadedDocs.length} documents.`);
-        setDocuments(loadedDocs);
+        setAllDocuments(loadedDocs);
         setError(null);
       })
       .catch((err: Error) => {
         console.error('Error loading documents via IPC:', err);
         setError('Failed to load documents. Please restart the application or check logs.');
-        setDocuments([]); // Set empty on error
+        setAllDocuments([]); // Set empty on error
       })
       .finally(() => {
         setIsLoading(false);
@@ -427,13 +478,16 @@ export default function App() {
 
   // === Search Logic ===
   const searchResults = useMemo(() => {
-    if (viewMode !== 'search' || !searchTerm) { return []; }
-
+    if (viewMode !== 'search' || !searchTerm) {
+       // If not searching, return all documents for initial display
+       return allDocuments.map(doc => ({ item: doc, score: 0, refIndex: 0 })); // Use allDocuments
+    }
+    
     let finalSearchTerm = searchTerm;
     let targetOwner: string | null = null;
     const ownerMatch = searchTerm.match(/(\s|^)@(\w+)(\s|$)/);
 
-    let documentsToSearch = documents;
+    let documentsToSearch = allDocuments;
 
     if (ownerMatch && ownerMatch[2]) {
       targetOwner = ownerMatch[2].toLowerCase();
@@ -443,7 +497,7 @@ export default function App() {
       console.log(`Remaining search term: ${finalSearchTerm}`);
 
       // Pre-filter documents by owner (case-insensitive)
-      documentsToSearch = documents.filter(doc =>
+      documentsToSearch = allDocuments.filter(doc =>
         doc.owner && doc.owner.toLowerCase() === targetOwner
       );
       console.log(`Found ${documentsToSearch.length} documents for owner ${targetOwner}`);
@@ -451,7 +505,7 @@ export default function App() {
 
     // If only @owner was typed, show all their docs without fuzzy search
     if (targetOwner && !finalSearchTerm && documentsToSearch.length > 0) {
-        return documentsToSearch.map(doc => ({ item: doc, score: 0, refIndex: documents.indexOf(doc) }));
+        return documentsToSearch.map(doc => ({ item: doc, score: 0, refIndex: allDocuments.indexOf(doc) }));
     }
 
     // If no remaining search term after extracting @owner, return empty results
@@ -467,12 +521,12 @@ export default function App() {
     console.log(`Performing Fuse search on ${documentsToSearch.length} docs with term: "${finalSearchTerm}"`);
     return currentFuse.search<Document>(finalSearchTerm);
 
-  }, [searchTerm, documents, viewMode, fuseOptions]);
+  }, [searchTerm, viewMode, fuse, allDocuments, fuseOptions]);
 
   const expandedDoc = useMemo(() => {
       if (!expandedDocId) return null;
-      return documents.find(doc => doc.id === expandedDocId) || null;
-  }, [expandedDocId, documents]);
+      return allDocuments.find(doc => doc.id === expandedDocId) || null;
+  }, [expandedDocId, allDocuments]);
 
   useEffect(() => {
     if (viewMode === 'search') { setSelectedIndex(0); setExpandedDocId(null); }
@@ -512,29 +566,30 @@ export default function App() {
 
   const handleDeleteDocument = useCallback(async (id: string) => {
     if (window.confirm('Are you sure you want to delete this document?')) {
-        const updatedDocs = documents.filter(doc => doc.id !== id);
-        setDocuments(updatedDocs); // Optimistic update
+        const updatedDocs = allDocuments.filter(doc => doc.id !== id);
+        setAllDocuments(updatedDocs); // Optimistic update
         await saveDocumentsIPC(updatedDocs); // Persist change
     }
-  }, [documents, saveDocumentsIPC]);
+  }, [allDocuments, saveDocumentsIPC]);
 
   const handleSaveDocument = useCallback(async (docData: Omit<Document, 'id'> & { id?: string }) => {
      console.log("Saving document (renderer):", docData);
      let updatedDocs: Document[];
      if (docData.id) { // Update existing
-        updatedDocs = documents.map(doc => doc.id === docData.id ? { ...docData, id: docData.id! } as Document : doc);
+        updatedDocs = allDocuments.map(doc => doc.id === docData.id ? { ...docData, id: docData.id! } as Document : doc);
      } else { // Add new
         const newDoc: Document = {
             ...docData,
-            id: `doc-${Date.now()}-${Math.random().toString(36).substring(2, 8)}`
+            id: `doc-${Date.now()}-${Math.random().toString(36).substring(2, 8)}`,
+            isTemporary: false,
         };
-        updatedDocs = [...documents, newDoc];
+        updatedDocs = [...allDocuments, newDoc];
      }
-     setDocuments(updatedDocs); // Optimistic update
+     setAllDocuments(updatedDocs); // Optimistic update
      setViewMode('manage');
      setDocToEdit(null);
      await saveDocumentsIPC(updatedDocs); // Persist change
-  }, [documents, saveDocumentsIPC]);
+  }, [allDocuments, saveDocumentsIPC]);
 
   const handleCancelEdit = () => {
      setViewMode('manage');
@@ -674,7 +729,7 @@ export default function App() {
        case 'manage':
            return (
                <ManageDocumentsView
-                   documents={documents}
+                   documents={allDocuments}
                    onAdd={handleAddDocument}
                    onEdit={handleEditDocument}
                    onDelete={handleDeleteDocument}

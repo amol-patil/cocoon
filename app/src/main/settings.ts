@@ -7,62 +7,58 @@ import * as isDev from 'electron-is-dev';
 export interface AppSettings {
   globalShortcut: string;
   defaultBrowser: string; // 'system', 'chrome', 'firefox', 'safari', etc.
+  theme: 'light' | 'dark' | 'system';
+  launchAtStartup: boolean;
+  showInDock: boolean;
 }
 
 // Default settings
 export const DEFAULT_SETTINGS: AppSettings = {
-  globalShortcut: 'CommandOrControl+Option+Space',
+  globalShortcut: 'Control+Option+Space',
   defaultBrowser: 'chrome',
+  theme: 'system',
+  launchAtStartup: false,
+  showInDock: true,
 };
 
-// Get the user data path
-const getUserSettingsPath = (): string => {
-  const userDataPath = isDev
-    ? path.join(app.getAppPath(), 'userData') // Dev mode: store in app directory
-    : app.getPath('userData'); // Prod mode: store in default user data location
+// Determine settings filename based on environment
+const IS_DEV = !app.isPackaged;
+const SETTINGS_FILENAME = IS_DEV ? 'settings-dev.json' : 'settings.json';
+const settingsPath = path.join(app.getPath('userData'), SETTINGS_FILENAME);
+console.log(`Using settings file: ${SETTINGS_FILENAME} at ${settingsPath}`);
 
-  // Create directory if it doesn't exist
-  if (!fs.existsSync(userDataPath)) {
-    fs.mkdirSync(userDataPath, { recursive: true });
-  }
-
-  return path.join(userDataPath, 'settings.json');
-};
-
-// Load settings from disk
-export const loadSettings = (): AppSettings => {
+// Load settings from file
+export function loadSettings(): AppSettings {
   try {
-    const settingsPath = getUserSettingsPath();
-    
-    // If settings file doesn't exist, create it with defaults
-    if (!fs.existsSync(settingsPath)) {
-      fs.writeFileSync(settingsPath, JSON.stringify(DEFAULT_SETTINGS, null, 2));
-      return { ...DEFAULT_SETTINGS };
+    if (fs.existsSync(settingsPath)) {
+      const rawData = fs.readFileSync(settingsPath, 'utf-8');
+      const loadedSettings = JSON.parse(rawData) as Partial<AppSettings>;
+      // Merge with defaults to ensure all keys exist
+      return { ...DEFAULT_SETTINGS, ...loadedSettings };
+    } else {
+      // If file doesn't exist, return defaults and save them
+      console.log('Settings file not found, using defaults and creating file.');
+      saveSettings(DEFAULT_SETTINGS);
+      return DEFAULT_SETTINGS;
     }
-    
-    // Read and parse settings
-    const data = fs.readFileSync(settingsPath, 'utf8');
-    const settings = JSON.parse(data) as Partial<AppSettings>;
-    
-    // Merge with defaults to ensure all properties exist
-    return { ...DEFAULT_SETTINGS, ...settings };
   } catch (error) {
-    console.error('Failed to load settings:', error);
-    return { ...DEFAULT_SETTINGS };
+    console.error('Error loading settings, using defaults:', error);
+    return DEFAULT_SETTINGS; // Return defaults on any error
   }
-};
+}
 
-// Save settings to disk
-export const saveSettings = (settings: AppSettings): boolean => {
+// Save settings to file
+export function saveSettings(settings: AppSettings): boolean {
   try {
-    const settingsPath = getUserSettingsPath();
-    fs.writeFileSync(settingsPath, JSON.stringify(settings, null, 2));
+    const data = JSON.stringify(settings, null, 2); // Pretty print JSON
+    fs.writeFileSync(settingsPath, data, 'utf-8');
+    console.log(`Settings saved successfully to ${settingsPath}`);
     return true;
   } catch (error) {
-    console.error('Failed to save settings:', error);
+    console.error('Error saving settings:', error);
     return false;
   }
-};
+}
 
 // Update a specific setting
 export const updateSetting = <K extends keyof AppSettings>(
