@@ -574,70 +574,78 @@ function App() {
         default:
             if (expandedDoc) {
                 return (
-                    <ExpandedCard
-                        doc={expandedDoc}
-                        onCollapse={() => setExpandedDocId(null)}
-                        onCopy={handleCopy}
-                        onOpenFile={handleOpenFile}
-                    />
+                    // Mark expanded card container as non-draggable
+                    <div className="[-webkit-app-region:no-drag]">
+                        <ExpandedCard
+                            doc={expandedDoc}
+                            onCollapse={() => setExpandedDocId(null)}
+                            onCopy={handleCopy}
+                            onOpenFile={handleOpenFile}
+                        />
+                    </div>
                 );
             } else {
                 return (
-                    <React.Fragment>
-                        <div className="flex items-center mb-4">
+                    <>
+                        {/* Remove drag region from here, mark container no-drag */}
+                        <div className="flex items-center mb-4 flex-shrink-0 [-webkit-app-region:no-drag]">
+                            {/* Keep no-drag on input */}
                             <input
                                 type="text"
                                 placeholder="Search your documents..."
                                 value={searchTerm}
                                 onChange={(e) => setSearchTerm(e.target.value)}
                                 onKeyDown={handleKeyDown}
-                                className="flex-grow w-full px-4 py-2 text-lg text-white bg-white/10 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 placeholder-gray-400"
+                                className="flex-grow w-full px-4 py-2 text-lg text-white bg-white/10 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 placeholder-gray-400 [-webkit-app-region:no-drag]"
                                 autoFocus
                             />
+                            {/* Keep no-drag on button */}
                             <button
                                 onClick={() => setViewMode('manage')}
-                                className="ml-2 p-2 text-gray-400 hover:text-white bg-white/10 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                className="ml-2 p-2 text-gray-400 hover:text-white bg-white/10 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 [-webkit-app-region:no-drag]"
                                 aria-label="Manage Documents"
                             >
                                 ⚙️
                             </button>
                         </div>
-                        <div className="flex-grow overflow-y-auto">
+                        {/* Mark results area container no-drag */}
+                        <div className="flex-grow overflow-y-auto [-webkit-app-region:no-drag]">
                             {!searchTerm && <p className="text-gray-500 text-center mt-4">Start typing to search...</p>}
                             {searchTerm && searchResults.length === 0 && <p className="text-gray-500 text-center mt-4">No results found for "{searchTerm}"</p>}
                             {searchTerm && searchResults.length > 0 && (
-                                <ul>
-                                    {searchResults.map(({ item }, index) => (
+                                <ul className="space-y-2 overflow-y-auto flex-grow" style={{ maxHeight: 'calc(100% - 60px)' }}>
+                                    {searchResults.map((result, index) => (
                                         <li
-                                            key={item.id}
+                                            key={result.item.id}
                                             className={`p-3 mb-1 rounded cursor-pointer transition-colors duration-100 ease-in-out ${
                                                 index === selectedIndex
                                                     ? 'bg-blue-600/60 ring-1 ring-blue-400'
                                                     : 'hover:bg-white/10'
                                             }`}
-                                            onClick={() => setExpandedDocId(item.id)}
+                                            onClick={() => setExpandedDocId(result.item.id)}
                                             onMouseEnter={() => setSelectedIndex(index)}
                                         >
                                             <p className="font-semibold truncate">
-                                                {item.type}
-                                                {item.owner && <span className="text-xs text-gray-400 ml-2">({item.owner})</span>}
+                                                {result.item.type}
+                                                {result.item.owner && <span className="text-xs text-gray-400 ml-2">({result.item.owner})</span>}
                                             </p>
                                             <p className="text-sm text-gray-300 truncate">
-                                                {item.fields[item.defaultField] || 'No default value'}
+                                                {result.item.fields[result.item.defaultField] || 'No default value'}
                                             </p>
                                         </li>
                                     ))}
                                 </ul>
                             )}
                         </div>
-                    </React.Fragment>
+                    </>
                 );
             }
      }
   };
 
   return (
-    <div className="flex flex-col h-screen p-4 bg-gradient-to-r from-blue-950 via-purple-950 to-indigo-950 text-white rounded-lg shadow-xl overflow-hidden relative">
+    // Apply drag region to the main app container
+    <div className="flex flex-col h-screen p-4 bg-gradient-to-r from-blue-950 via-purple-950 to-indigo-950 text-white rounded-lg shadow-xl overflow-hidden relative [-webkit-app-region:drag]">
        {renderContent()}
     </div>
   );
