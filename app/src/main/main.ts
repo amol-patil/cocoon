@@ -156,8 +156,8 @@ ipcMain.on('open-external-link', async (event, url: string) => {
                 // Escape URL for shell command
                 const escapedUrl = url.replace(/"/g, '\\"');
                 
-                // -g = open in foreground, but remove the -a "Safari" to use default browser
-                const command = `open -g "${escapedUrl}"`;
+                // -g = open in foreground, -a = specify application (Chrome)
+                const command = `open -g -a "Google Chrome" "${escapedUrl}"`;
                 
                 exec(command, (error: any, stdout: string, stderr: string) => {
                     if (error) {
