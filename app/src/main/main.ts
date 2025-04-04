@@ -1,7 +1,6 @@
 import { app, BrowserWindow, session, globalShortcut, ipcMain, shell, Menu, dialog } from 'electron';
 import * as path from 'path';
 import * as fs from 'fs';
-import * as isDev from 'electron-is-dev';
 import { loadDocuments, saveDocuments } from './secureStore';
 import { loadSettings, saveSettings, AppSettings, DEFAULT_SETTINGS } from './settings';
 
@@ -77,7 +76,7 @@ function createWindow() {
       responseHeaders: {
         ...details.responseHeaders,
         'Content-Security-Policy': [
-          isDev
+          !app.isPackaged
             ? "default-src 'self' 'unsafe-inline' data:; script-src 'self' 'unsafe-eval' 'unsafe-inline' data:; connect-src 'self' http://localhost:* ws://localhost:*; style-src 'self' 'unsafe-inline';"
             : "default-src 'self' 'unsafe-inline' data:; script-src 'self' 'unsafe-inline' data:; style-src 'self' 'unsafe-inline';"
         ]
@@ -85,8 +84,8 @@ function createWindow() {
     });
   });
 
-  // Open DevTools in development
-  if (isDev) {
+  // Open DevTools only when not packaged (i.e., in development)
+  if (!app.isPackaged) {
     console.log('Opening DevTools...');
     mainWindow.webContents.openDevTools({ mode: 'detach' });
   }

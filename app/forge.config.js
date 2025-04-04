@@ -3,14 +3,14 @@ const { FuseV1Options, FuseVersion } = require('@electron/fuses');
 
 module.exports = {
   packagerConfig: {
-    arch: ['x64', 'arm64'],
-    asar: true, // Bundle app source into an archive
-    icon: './icons/cocoon', // Updated to match the actual icon filename
+    arch: ['arm64'], // Target only Apple Silicon
+    asar: false, // Disable ASAR to rule out packaging issues
+    icon: './icons/cocoon.icns', // Correct icon path for macOS
     appBundleId: 'com.pixelpieco.cocoon',
     appCategoryType: 'public.app-category.productivity',
     appCopyright: 'Copyright © 2023 PixelPieCo',
-    osxSign: false,  // Disable code signing completely
-    mas: false,      // Explicitly set not for Mac App Store
+    osxSign: false,  // Keep signing disabled for now
+    mas: false,      // Not for Mac App Store
     env: {
       NODE_ENV: 'production'
     },
@@ -20,30 +20,21 @@ module.exports = {
     extendInfo: {
       CFBundleDisplayName: 'Cocoon',
       CFBundleName: 'Cocoon',
+      CFBundleIconFile: 'cocoon.icns', // Explicitly set the correct icon file
       NSHumanReadableCopyright: 'Copyright © 2023 PixelPieCo'
     }
   },
   rebuildConfig: {},
   makers: [
     {
-      name: '@electron-forge/maker-squirrel',
-      config: {},
-    },
-    {
-      name: '@electron-forge/maker-zip',
+      name: '@electron-forge/maker-dmg',
       platforms: ['darwin'],
       config: {
-        arch: ['x64', 'arm64']
+        arch: ['arm64'], // Match packager arch
+        name: 'Cocoon Installer', // Name of the DMG file
+        icon: './icons/cocoon.icns' // Icon for the DMG itself
       }
-    },
-    {
-      name: '@electron-forge/maker-deb',
-      config: {},
-    },
-    {
-      name: '@electron-forge/maker-rpm',
-      config: {},
-    },
+    }
   ],
   plugins: [
     {
@@ -65,15 +56,11 @@ module.exports = {
         }
       }
     },
-    // Fuses are used to enable/disable experimental features
+    // Minimal Fuses configuration
     new FusesPlugin({
       version: FuseVersion.V1,
       [FuseV1Options.RunAsNode]: false,
-      [FuseV1Options.EnableCookieEncryption]: true,
-      [FuseV1Options.EnableNodeOptionsEnvironmentVariable]: false,
       [FuseV1Options.EnableNodeCliInspectArguments]: false,
-      [FuseV1Options.EnableEmbeddedAsarIntegrityValidation]: true,
-      [FuseV1Options.OnlyLoadAppFromAsar]: true,
     }),
   ],
 }; 
