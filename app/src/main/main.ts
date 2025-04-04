@@ -1,8 +1,9 @@
-import { app, BrowserWindow, session, globalShortcut, ipcMain, shell } from 'electron';
+import { app, BrowserWindow, session, globalShortcut, ipcMain, shell, Menu, dialog } from 'electron';
 import * as path from 'path';
 import * as fs from 'fs';
 import * as isDev from 'electron-is-dev';
 import { loadDocuments, saveDocuments } from './secureStore';
+import { loadSettings, saveSettings, AppSettings, DEFAULT_SETTINGS } from './settings';
 
 // Define Document type again (needed for IPC typing)
 interface DocumentField { [key: string]: string | undefined }
@@ -18,6 +19,29 @@ declare const MAIN_WINDOW_WEBPACK_ENTRY: string;
 declare const MAIN_WINDOW_PRELOAD_WEBPACK_ENTRY: string;
 
 let mainWindow: BrowserWindow | null = null;
+let appSettings: AppSettings = DEFAULT_SETTINGS;
+
+// Load settings on app start
+const loadAppSettings = () => {
+  appSettings = loadSettings();
+  console.log('Loaded app settings:', appSettings);
+};
+
+// Function to register global shortcut
+const registerGlobalShortcut = () => {
+  // Unregister any existing shortcuts first
+  globalShortcut.unregisterAll();
+  
+  // Register the configured shortcut
+  const shortcut = appSettings.globalShortcut;
+  const ret = globalShortcut.register(shortcut, toggleWindow);
+  
+  if (!ret) {
+    console.error(`Global shortcut registration failed for: ${shortcut}`);
+  } else {
+    console.log(`Global shortcut registered successfully: ${shortcut}`);
+  }
+};
 
 function createWindow() {
   console.log('Creating main window...');
@@ -114,6 +138,74 @@ function toggleWindow() {
   }
 }
 
+// Create a custom application menu
+function createAppMenu() {
+  const isMac = process.platform === 'darwin';
+  
+  const template = [
+    // App menu (macOS only)
+    ...(isMac ? [{
+      label: app.name,
+      submenu: [
+        { role: 'about' },
+        { type: 'separator' },
+        {
+          label: 'Settings',
+          click: () => {
+            // Tell renderer to show settings
+            if (mainWindow) {
+              mainWindow.webContents.send('open-settings');
+              
+              // Show window if it's hidden
+              if (!mainWindow.isVisible()) {
+                mainWindow.show();
+                mainWindow.focus();
+              }
+            }
+          }
+        },
+        { type: 'separator' },
+        { role: 'quit' }
+      ]
+    }] : []),
+    
+    // For non-macOS, add a simple File menu with settings
+    ...(!isMac ? [{
+      label: 'File',
+      submenu: [
+        {
+          label: 'Settings',
+          click: () => {
+            if (mainWindow) {
+              mainWindow.webContents.send('open-settings');
+              
+              if (!mainWindow.isVisible()) {
+                mainWindow.show();
+                mainWindow.focus();
+              }
+            }
+          }
+        },
+        { type: 'separator' },
+        { role: 'quit' }
+      ]
+    }] : []),
+    
+    // Edit menu (just for clipboard operations)
+    {
+      label: 'Edit',
+      submenu: [
+        { role: 'cut' },
+        { role: 'copy' },
+        { role: 'paste' }
+      ]
+    }
+  ];
+
+  const menu = Menu.buildFromTemplate(template as any);
+  Menu.setApplicationMenu(menu);
+}
+
 // --- IPC Handlers ---
 
 // Handle request to load documents
@@ -143,25 +235,84 @@ ipcMain.handle('save-documents', async (event, documents: Document[]) => {
   }
 });
 
-// Handle request to open external link using child_process for macOS
+// Handle request to get settings
+ipcMain.handle('get-settings', async () => {
+  return appSettings;
+});
+
+// Handle request to save settings
+ipcMain.handle('save-settings', async (event, newSettings: AppSettings) => {
+  try {
+    console.log(`[IPC] Received save-settings request:`, newSettings);
+    
+    // Save the new settings
+    const success = saveSettings(newSettings);
+    if (!success) {
+      throw new Error('Failed to save settings');
+    }
+    
+    // Update our in-memory settings
+    appSettings = newSettings;
+    
+    // If the shortcut changed, re-register it
+    registerGlobalShortcut();
+    
+    console.log('[IPC] Settings saved successfully.');
+    return { success: true };
+  } catch (error) {
+    console.error('[IPC] Error saving settings:', error);
+    return { success: false, error: (error as Error).message };
+  }
+});
+
+// Handle request to hide the window
+ipcMain.on('hide-window', (event) => {
+    console.log('[IPC] Received hide-window request');
+    if (mainWindow) {
+        mainWindow.hide();
+    }
+});
+
+// Handle request to open external link using specified browser
 ipcMain.on('open-external-link', async (event, url: string) => {
     if (url && (url.startsWith('http://') || url.startsWith('https://'))) {
         try {
-            console.log(`[IPC] Opening external URL with custom approach: ${url}`);
+            console.log(`[IPC] Opening external URL: ${url}`);
             
-            // For macOS: Use open command with specific options to force foreground
+            // For macOS: Use the selected browser
             if (process.platform === 'darwin') {
                 const { exec } = require('child_process');
                 
                 // Escape URL for shell command
                 const escapedUrl = url.replace(/"/g, '\\"');
                 
-                // -g = open in foreground, -a = specify application (Chrome)
-                const command = `open -g -a "Google Chrome" "${escapedUrl}"`;
+                let command = '';
+                
+                // Determine which browser to use
+                switch (appSettings.defaultBrowser.toLowerCase()) {
+                    case 'chrome':
+                        command = `open -g -a "Google Chrome" "${escapedUrl}"`;
+                        break;
+                    case 'firefox':
+                        command = `open -g -a "Firefox" "${escapedUrl}"`;
+                        break;
+                    case 'safari':
+                        command = `open -g -a "Safari" "${escapedUrl}"`;
+                        break;
+                    case 'edge':
+                        command = `open -g -a "Microsoft Edge" "${escapedUrl}"`;
+                        break;
+                    case 'brave':
+                        command = `open -g -a "Brave Browser" "${escapedUrl}"`;
+                        break;
+                    default:
+                        // Use system default browser
+                        command = `open -g "${escapedUrl}"`;
+                }
                 
                 exec(command, (error: any, stdout: string, stderr: string) => {
                     if (error) {
-                        console.error(`[IPC] Error opening URL with open command: ${error.message}`);
+                        console.error(`[IPC] Error opening URL with command: ${error.message}`);
                         event.sender.send('open-link-error', `Failed to open: ${error.message}`);
                         
                         // Fallback to shell.openExternal
@@ -174,7 +325,7 @@ ipcMain.on('open-external-link', async (event, url: string) => {
                         console.warn(`[IPC] Warning when opening URL: ${stderr}`);
                     }
                     
-                    console.log(`[IPC] URL opened successfully with open command: ${url}`);
+                    console.log(`[IPC] URL opened successfully with command: ${url}`);
                 });
             } else {
                 // For non-macOS: Use standard shell.openExternal
@@ -191,27 +342,22 @@ ipcMain.on('open-external-link', async (event, url: string) => {
     }
 });
 
-// Handle request to hide the window
-ipcMain.on('hide-window', (event) => {
-    console.log('[IPC] Received hide-window request');
-    if (mainWindow) {
-        mainWindow.hide();
-    }
-});
-
 // --- App Lifecycle Events ---
 
 app.on('ready', () => {
-  console.log('App ready, creating window and registering shortcut...');
+  console.log('App ready, loading settings and creating window...');
+  
+  // Load settings first
+  loadAppSettings();
+  
+  // Create the app window
   createWindow();
-
-  const shortcut = 'Control+Option+Space';
-  const ret = globalShortcut.register(shortcut, toggleWindow);
-  if (!ret) {
-    console.error(`Global shortcut registration failed for: ${shortcut}`);
-  } else {
-    console.log(`Global shortcut registered successfully: ${shortcut}`);
-  }
+  
+  // Create custom app menu
+  createAppMenu();
+  
+  // Register the global shortcut from settings
+  registerGlobalShortcut();
 });
 
 app.on('window-all-closed', () => {

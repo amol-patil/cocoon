@@ -22,21 +22,21 @@ const electronAPI = {
     },
     // Receive (Main -> Renderer)
     on: (channel: string, func: (...args: any[]) => void) => {
-      const validReceiveChannels = ['search-results', 'document-opened', 'error']; // Whitelist receive channels
+      const validReceiveChannels = ['search-results', 'document-opened', 'error', 'open-link-error', 'open-settings']; // Whitelist receive channels
       if (validReceiveChannels.includes(channel)) {
         ipcRenderer.on(channel, (event, ...args) => func(...args));
       }
     },
     // Remove listener
     removeListener: (channel: string, func: (...args: any[]) => void) => {
-      const validReceiveChannels = ['search-results', 'document-opened', 'error'];
+      const validReceiveChannels = ['search-results', 'document-opened', 'error', 'open-link-error', 'open-settings'];
       if (validReceiveChannels.includes(channel)) {
         ipcRenderer.removeListener(channel, func);
       }
     },
     // Invoke (Renderer -> Main -> Renderer)
     invoke: async (channel: string, ...args: any[]): Promise<any> => {
-        const validInvokeChannels = ['load-documents', 'save-documents']; // Whitelist invoke channels
+        const validInvokeChannels = ['load-documents', 'save-documents', 'get-settings', 'save-settings']; // Add settings channels
         if (validInvokeChannels.includes(channel)) {
             return await ipcRenderer.invoke(channel, ...args);
         } else {

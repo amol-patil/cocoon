@@ -1,5 +1,6 @@
 import React, { useState, useMemo, useEffect, useCallback } from 'react';
 import Fuse from 'fuse.js';
+import SettingsView from './Settings';
 
 // --- Types ---
 interface DocumentField { [key: string]: string | undefined }
@@ -119,7 +120,9 @@ function ManageDocumentsView({ documents, onAdd, onEdit, onDelete, onBack, onEsc
     >
       <div className="flex justify-between items-center mb-4">
         <h2 className="text-xl font-semibold">Manage Documents</h2>
-        <button onClick={onBack} className="text-sm text-blue-400 hover:text-blue-300 focus:outline-none">← Back to Search</button>
+        <div className="flex space-x-2">
+          <button onClick={onBack} className="text-sm text-blue-400 hover:text-blue-300 focus:outline-none">← Back to Search</button>
+        </div>
       </div>
       <div className="flex-grow overflow-y-auto mb-4">
         {documents.length === 0 ? (
@@ -350,11 +353,11 @@ function DocumentForm({ documentToEdit, onSave, onCancel, onEscape }: DocumentFo
     );
 }
 
+// Define AppViewMode type
+type AppViewMode = 'search' | 'manage' | 'editForm' | 'settings';
+
 // --- Main App Component ---
-
-type ViewMode = 'search' | 'manage' | 'editForm';
-
-function App() {
+export default function App() {
   // === State ===
   const [documents, setDocuments] = useState<Document[]>([]); // Initialize empty, load from IPC
   const [isLoading, setIsLoading] = useState(true); // Loading state
@@ -362,7 +365,7 @@ function App() {
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedIndex, setSelectedIndex] = useState(0);
   const [expandedDocId, setExpandedDocId] = useState<string | null>(null);
-  const [viewMode, setViewMode] = useState<ViewMode>('search');
+  const [viewMode, setViewMode] = useState<AppViewMode>('search');
   const [docToEdit, setDocToEdit] = useState<Document | null>(null);
 
   // Re-initialize Fuse when documents change
@@ -611,110 +614,129 @@ function App() {
     }
   }, [viewMode, searchResults, selectedIndex, expandedDocId, handleCopy, handleCancelEdit, hideWindow]);
 
+  // Add listener for open-settings IPC message
+  useEffect(() => {
+    const handleOpenSettings = () => {
+      console.log('Received open-settings message');
+      setViewMode('settings');
+    };
+
+    // Add the event listener
+    window.ipc.on('open-settings', handleOpenSettings);
+    
+    // Clean up the event listener on component unmount
+    return () => {
+      window.ipc.removeListener('open-settings', handleOpenSettings);
+    };
+  }, []);
+
   // === Render Logic ===
   const renderContent = () => {
-      // Display loading indicator
-     if (isLoading) {
-         return <div className="flex items-center justify-center h-full"><p className="text-gray-400">Loading documents...</p></div>;
-     }
-     // Display error message
-     if (error) {
-         return <div className="flex items-center justify-center h-full p-4"><p className="text-red-400 text-center"><strong className="block mb-2">Error:</strong> {error}</p></div>;
-     }
+    if (isLoading) return <div className="flex items-center justify-center h-full"><div className="text-xl text-gray-400">Loading...</div></div>;
+    if (error) return <div className="flex items-center justify-center h-full"><div className="text-red-400">{error}</div></div>;
 
-     // Render based on viewMode
-     switch (viewMode) {
-        case 'manage':
-            return (
-                <ManageDocumentsView
-                    documents={documents}
-                    onAdd={handleAddDocument}
-                    onEdit={handleEditDocument}
-                    onDelete={handleDeleteDocument}
-                    onBack={() => setViewMode('search')}
-                    onEscape={hideWindow}
-                />
-            );
-        case 'editForm':
-            return (
-                <DocumentForm
-                    documentToEdit={docToEdit}
-                    onSave={handleSaveDocument}
-                    onCancel={handleCancelEdit}
-                    onEscape={hideWindow}
-                />
-            );
-        case 'search':
-        default:
-            if (expandedDoc) {
-                return (
-                    // Mark expanded card container as non-draggable
-                    <div className="[-webkit-app-region:no-drag]">
-                        <ExpandedCard
-                            doc={expandedDoc}
-                            onCollapse={() => setExpandedDocId(null)}
-                            onCopy={handleCopy}
-                            onOpenFile={handleOpenFile}
-                        />
-                    </div>
-                );
-            } else {
-                return (
-                    <>
-                        {/* Remove drag region from here, mark container no-drag */}
-                        <div className="flex items-center mb-4 flex-shrink-0 [-webkit-app-region:no-drag]">
-                            {/* Keep no-drag on input */}
-                            <input
-                                type="text"
-                                placeholder="Search your documents..."
-                                value={searchTerm}
-                                onChange={(e) => setSearchTerm(e.target.value)}
-                                onKeyDown={handleKeyDown}
-                                className="flex-grow w-full px-4 py-2 text-lg text-white bg-white/10 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 placeholder-gray-400 [-webkit-app-region:no-drag]"
-                                autoFocus
-                            />
-                            {/* Keep no-drag on button */}
-                            <button
-                                onClick={() => setViewMode('manage')}
-                                className="ml-2 p-2 text-gray-400 hover:text-white bg-white/10 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 [-webkit-app-region:no-drag]"
-                                aria-label="Manage Documents"
-                            >
-                                ⚙️
-                            </button>
-                        </div>
-                        {/* Mark results area container no-drag */}
-                        <div className="flex-grow overflow-y-auto [-webkit-app-region:no-drag]">
-                            {!searchTerm && <p className="text-gray-500 text-center mt-4">Start typing to search...</p>}
-                            {searchTerm && searchResults.length === 0 && <p className="text-gray-500 text-center mt-4">No results found for "{searchTerm}"</p>}
-                            {searchTerm && searchResults.length > 0 && (
-                                <ul className="space-y-2 overflow-y-auto flex-grow" style={{ maxHeight: 'calc(100% - 60px)' }}>
-                                    {searchResults.map((result, index) => (
-                                        <li
-                                            key={result.item.id}
-                                            className={`p-3 mb-1 rounded cursor-pointer transition-colors duration-100 ease-in-out ${
-                                                index === selectedIndex
-                                                    ? 'bg-blue-600/60 ring-1 ring-blue-400'
-                                                    : 'hover:bg-white/10'
-                                            }`}
-                                            onClick={() => setExpandedDocId(result.item.id)}
-                                            onMouseEnter={() => setSelectedIndex(index)}
-                                        >
-                                            <p className="font-semibold truncate">
-                                                {result.item.type}
-                                                {result.item.owner && <span className="text-xs text-gray-400 ml-2">({result.item.owner})</span>}
-                                            </p>
-                                            <p className="text-sm text-gray-300 truncate">
-                                                {result.item.fields[result.item.defaultField] || 'No default value'}
-                                            </p>
-                                        </li>
-                                    ))}
-                                </ul>
-                            )}
-                        </div>
-                    </>
-                );
-            }
-     }
+    // Render based on viewMode
+    switch (viewMode) {
+       case 'manage':
+           return (
+               <ManageDocumentsView
+                   documents={documents}
+                   onAdd={handleAddDocument}
+                   onEdit={handleEditDocument}
+                   onDelete={handleDeleteDocument}
+                   onBack={() => setViewMode('search')}
+                   onEscape={hideWindow}
+               />
+           );
+       case 'editForm':
+           return (
+               <DocumentForm
+                   documentToEdit={docToEdit}
+                   onSave={handleSaveDocument}
+                   onCancel={handleCancelEdit}
+                   onEscape={hideWindow}
+               />
+           );
+       case 'settings':
+           return (
+               <SettingsView
+                   onBack={() => setViewMode('search')}
+               />
+           );
+       case 'search':
+       default:
+           return (
+              <div className="flex flex-col h-full">
+                  {/* Header */}
+                  <div className="flex justify-between items-center mb-4">
+                      <h1 className="text-xl font-semibold">Cocoon</h1>
+                      <div className="flex space-x-2">
+                          <button
+                              onClick={() => setViewMode('manage')}
+                              className="text-gray-400 hover:text-white focus:outline-none [-webkit-app-region:no-drag]"
+                              aria-label="Manage Documents"
+                          >
+                              📁
+                          </button>
+                      </div>
+                  </div>
+                  
+                  {/* Main content area (either search UI or expanded card) */}
+                  {expandedDocId ? (
+                      // Show expanded card when a document is selected
+                      <div className="[-webkit-app-region:no-drag]">
+                          <ExpandedCard
+                              doc={expandedDoc!}
+                              onCollapse={() => setExpandedDocId(null)}
+                              onCopy={handleCopy}
+                              onOpenFile={handleOpenFile}
+                          />
+                      </div>
+                  ) : (
+                      // Show search UI when no document is expanded
+                      <>
+                          {/* Search input */}
+                          <div className="flex items-center mb-4 flex-shrink-0 [-webkit-app-region:no-drag]">
+                              <input
+                                  type="text"
+                                  placeholder="Search your documents..."
+                                  value={searchTerm}
+                                  onChange={(e) => setSearchTerm(e.target.value)}
+                                  className="w-full px-3 py-2 text-white bg-white/10 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 [-webkit-app-region:no-drag]"
+                                  autoFocus
+                              />
+                          </div>
+                          
+                          {/* Results */}
+                          <div className="flex-grow overflow-y-auto [-webkit-app-region:no-drag]">
+                              {!searchTerm && <p className="text-gray-500 text-center mt-4">Start typing to search...</p>}
+                              {searchTerm && searchResults.length === 0 && <p className="text-gray-500 text-center mt-4">No documents found</p>}
+                              
+                              {/* Search results */}
+                              {searchResults.map((result, index) => (
+                                  <div
+                                      key={result.item.id}
+                                      className={`p-2 mb-2 rounded-md cursor-pointer hover:bg-white/10 ${selectedIndex === index ? 'bg-white/10 ring-1 ring-blue-500' : ''}`}
+                                      onClick={() => {
+                                          setSelectedIndex(index);
+                                          setExpandedDocId(result.item.id);
+                                      }}
+                                  >
+                                      <div className="flex justify-between items-center">
+                                          <h3 className="font-medium text-md">{result.item.type}</h3>
+                                          <span className="text-xs text-gray-400">{result.item.fields.owner || ''}</span>
+                                      </div>
+                                      <p className="text-sm text-gray-300 truncate">
+                                          {result.item.defaultField && result.item.fields[result.item.defaultField]}
+                                      </p>
+                                  </div>
+                              ))}
+                          </div>
+                      </>
+                  )}
+              </div>
+           );
+    }
   };
 
   return (
@@ -728,5 +750,3 @@ function App() {
     </div>
   );
 }
-
-export default App;
