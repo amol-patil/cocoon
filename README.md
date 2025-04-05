@@ -10,7 +10,7 @@ Visit the landing page: [https://amol-patil.github.io/cocoon/](https://amol-pati
 <!-- ![GitHub release (latest by date)](https://img.shields.io/github/v/release/GITHUB_USERNAME/cocoon) -->
 
 <!-- Optional: Screenshot/GIF -->
-<!-- ![Cocoon Screenshot](path/to/screenshot.png) -->
+![Cocoon Screenshot](docs/images/cocoon-screenshot.png)
 
 ## Features
 
@@ -66,7 +66,7 @@ Interested in contributing? Great!
     *   Node.js (e.g., v18 or later)
     *   npm (usually comes with Node.js)
     *   Git
-2.  **Clone:** `git clone https://github.com/GITHUB_USERNAME/cocoon.git`
+2.  **Clone:** `git clone https://github.com/amol-patil/cocoon.git`
 3.  **Navigate:** `cd cocoon/app`
 4.  **Install Dependencies:** `npm install`
 5.  **Run Development Server:** `npm run start`
@@ -75,12 +75,9 @@ Interested in contributing? Great!
     *   `npm run format`
 7.  **Build:** `npm run make` (creates distributable in `app/out`)
 
-See [CONTRIBUTING.md](CONTRIBUTING.md) for more details on code style and pull requests.
-
 ## License
 
 This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
 
-## Contributing
 
-Please read [CONTRIBUTING.md](CONTRIBUTING.md) for details on our code of conduct, and the process for submitting pull requests to us.
+
