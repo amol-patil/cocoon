@@ -4,7 +4,7 @@ const { FuseV1Options, FuseVersion } = require("@electron/fuses");
 module.exports = {
   packagerConfig: {
     arch: ["arm64"], // Target only Apple Silicon
-    asar: false, // Disable ASAR to rule out packaging issues
+    asar: true, // Enable ASAR packaging for production
     icon: "./icons/cocoon.icns", // Correct icon path for macOS
     appBundleId: "com.pixelpieco.cocoon",
     appCategoryType: "public.app-category.productivity",
