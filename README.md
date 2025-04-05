@@ -1,4 +1,4 @@
-# Cocoon 🥥
+# Cocoon
 
 <!-- Short Description -->
 > A simple macOS overlay application for quickly retrieving those Driving License numbers, Passport numbers, Health Cards and many others without needing to dig through your files (or worse Photos). Bonus: it links directly to source file(s) so you can also attached the scanned copies if and when needed!
