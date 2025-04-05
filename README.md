@@ -1,5 +1,7 @@
 # Cocoon
 
+Visit the landing page: [https://amol-patil.github.io/cocoon/](https://amol-patil.github.io/cocoon/)
+
 <!-- Short Description -->
 > A simple macOS overlay application for quickly retrieving those Driving License numbers, Passport numbers, Health Cards and many others without needing to dig through your files (or worse Photos). Bonus: it links directly to source file(s) so you can also attached the scanned copies if and when needed!
 
@@ -24,7 +26,7 @@
 
 ## Installation (macOS)
 
-1.  **Download:** Go to the [Latest Release page](https://github.com/GITHUB_USERNAME/cocoon/releases/latest) on GitHub.
+1.  **Download:** Go to the [Latest Release page](https://github.com/amol-patil/cocoon/releases/latest) on GitHub.
 2.  Download the `.dmg` file (e.g., `Cocoon-x.y.z.dmg`).
 3.  **Mount:** Double-click the downloaded `.dmg` file to open it.
 4.  **Install:** Drag the `Cocoon.app` icon into your `Applications` folder.
