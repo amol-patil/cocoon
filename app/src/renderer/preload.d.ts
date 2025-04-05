@@ -15,4 +15,4 @@ declare global {
     // Declare other preload APIs here if needed
     electronUtils?: any; // Add type for electronUtils if used
   }
-} 
+}

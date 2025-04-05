@@ -1,60 +1,60 @@
-const { FusesPlugin } = require('@electron-forge/plugin-fuses');
-const { FuseV1Options, FuseVersion } = require('@electron/fuses');
+const { FusesPlugin } = require("@electron-forge/plugin-fuses");
+const { FuseV1Options, FuseVersion } = require("@electron/fuses");
 
 module.exports = {
   packagerConfig: {
-    arch: ['arm64'], // Target only Apple Silicon
+    arch: ["arm64"], // Target only Apple Silicon
     asar: false, // Disable ASAR to rule out packaging issues
-    icon: './icons/cocoon.icns', // Correct icon path for macOS
-    appBundleId: 'com.pixelpieco.cocoon',
-    appCategoryType: 'public.app-category.productivity',
-    appCopyright: 'Copyright © 2023 PixelPieCo',
-    osxSign: false,  // Keep signing disabled for now
-    mas: false,      // Not for Mac App Store
+    icon: "./icons/cocoon.icns", // Correct icon path for macOS
+    appBundleId: "com.pixelpieco.cocoon",
+    appCategoryType: "public.app-category.productivity",
+    appCopyright: "Copyright © 2023 PixelPieCo",
+    osxSign: false, // Keep signing disabled for now
+    mas: false, // Not for Mac App Store
     env: {
-      NODE_ENV: 'production'
+      NODE_ENV: "production",
     },
     // Name that shows in the Dock
-    executableName: 'Cocoon',
+    executableName: "Cocoon",
     // Add info.plist settings
     extendInfo: {
-      CFBundleDisplayName: 'Cocoon',
-      CFBundleName: 'Cocoon',
-      CFBundleIconFile: 'cocoon.icns', // Explicitly set the correct icon file
-      NSHumanReadableCopyright: 'Copyright © 2023 PixelPieCo'
-    }
+      CFBundleDisplayName: "Cocoon",
+      CFBundleName: "Cocoon",
+      CFBundleIconFile: "cocoon.icns", // Explicitly set the correct icon file
+      NSHumanReadableCopyright: "Copyright © 2023 PixelPieCo",
+    },
   },
   rebuildConfig: {},
   makers: [
     {
-      name: '@electron-forge/maker-dmg',
-      platforms: ['darwin'],
+      name: "@electron-forge/maker-dmg",
+      platforms: ["darwin"],
       config: {
-        arch: ['arm64'], // Match packager arch
-        name: 'Cocoon Installer', // Name of the DMG file
-        icon: './icons/cocoon.icns' // Icon for the DMG itself
-      }
-    }
+        arch: ["arm64"], // Match packager arch
+        name: "Cocoon Installer", // Name of the DMG file
+        icon: "./icons/cocoon.icns", // Icon for the DMG itself
+      },
+    },
   ],
   plugins: [
     {
-      name: '@electron-forge/plugin-webpack',
+      name: "@electron-forge/plugin-webpack",
       config: {
-        mainConfig: './webpack.main.config.js',
+        mainConfig: "./webpack.main.config.js",
         renderer: {
-          config: './webpack.renderer.config.js',
+          config: "./webpack.renderer.config.js",
           entryPoints: [
             {
-              name: 'main_window',
-              html: './public/index.html',
-              js: './src/renderer/index.tsx',
+              name: "main_window",
+              html: "./public/index.html",
+              js: "./src/renderer/index.tsx",
               preload: {
-                js: './src/main/preload.ts'
-              }
-            }
-          ]
-        }
-      }
+                js: "./src/main/preload.ts",
+              },
+            },
+          ],
+        },
+      },
     },
     // Minimal Fuses configuration
     new FusesPlugin({
@@ -63,4 +63,4 @@ module.exports = {
       [FuseV1Options.EnableNodeCliInspectArguments]: false,
     }),
   ],
-}; 
+};

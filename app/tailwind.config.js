@@ -7,4 +7,4 @@ module.exports = {
     extend: {}, // Extend default theme here if needed
   },
   plugins: [], // Add plugins here
-} 
+};

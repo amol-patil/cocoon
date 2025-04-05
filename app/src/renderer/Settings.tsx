@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect } from "react";
 
 // Define Settings interface to match the main process type
 interface AppSettings {
@@ -13,22 +13,22 @@ interface SettingsViewProps {
 export default function SettingsView({ onBack }: SettingsViewProps) {
   const [isLoading, setIsLoading] = useState(true);
   const [settings, setSettings] = useState<AppSettings>({
-    globalShortcut: 'CommandOrControl+Option+Space',
-    defaultBrowser: 'chrome'
+    globalShortcut: "CommandOrControl+Option+Space",
+    defaultBrowser: "chrome",
   });
-  const [shortcutInput, setShortcutInput] = useState('');
+  const [shortcutInput, setShortcutInput] = useState("");
   const [isSaving, setIsSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
 
   // Available browser options
   const browserOptions = [
-    { value: 'system', label: 'System Default' },
-    { value: 'chrome', label: 'Google Chrome' },
-    { value: 'firefox', label: 'Firefox' },
-    { value: 'safari', label: 'Safari' },
-    { value: 'edge', label: 'Microsoft Edge' },
-    { value: 'brave', label: 'Brave Browser' }
+    { value: "system", label: "System Default" },
+    { value: "chrome", label: "Google Chrome" },
+    { value: "firefox", label: "Firefox" },
+    { value: "safari", label: "Safari" },
+    { value: "edge", label: "Microsoft Edge" },
+    { value: "brave", label: "Brave Browser" },
   ];
 
   // Load settings on component mount
@@ -36,12 +36,14 @@ export default function SettingsView({ onBack }: SettingsViewProps) {
     const loadSettings = async () => {
       try {
         setIsLoading(true);
-        const loadedSettings = await window.ipc.invoke('get-settings') as AppSettings;
+        const loadedSettings = (await window.ipc.invoke(
+          "get-settings",
+        )) as AppSettings;
         setSettings(loadedSettings);
         setShortcutInput(loadedSettings.globalShortcut);
         setIsLoading(false);
       } catch (err) {
-        setError('Failed to load settings');
+        setError("Failed to load settings");
         setIsLoading(false);
       }
     };
@@ -54,38 +56,41 @@ export default function SettingsView({ onBack }: SettingsViewProps) {
     try {
       setIsSaving(true);
       setError(null);
-      
+
       // Validate shortcut input before saving
       if (!shortcutInput.trim()) {
-        setError('Global shortcut cannot be empty');
+        setError("Global shortcut cannot be empty");
         setIsSaving(false);
         return;
       }
-      
+
       // Update settings
       const updatedSettings = {
         ...settings,
-        globalShortcut: shortcutInput
+        globalShortcut: shortcutInput,
       };
-      
+
       // Send to main process
-      const result = await window.ipc.invoke('save-settings', updatedSettings) as { success: boolean; error?: string };
-      
+      const result = (await window.ipc.invoke(
+        "save-settings",
+        updatedSettings,
+      )) as { success: boolean; error?: string };
+
       if (result.success) {
         setSettings(updatedSettings);
-        setSuccessMessage('Settings saved successfully');
-        
+        setSuccessMessage("Settings saved successfully");
+
         // Clear success message after a delay
         setTimeout(() => {
           setSuccessMessage(null);
         }, 3000);
       } else {
-        setError(result.error || 'Failed to save settings');
+        setError(result.error || "Failed to save settings");
       }
-      
+
       setIsSaving(false);
     } catch (err) {
-      setError('An unexpected error occurred');
+      setError("An unexpected error occurred");
       setIsSaving(false);
     }
   };
@@ -94,7 +99,7 @@ export default function SettingsView({ onBack }: SettingsViewProps) {
   const handleBrowserChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
     setSettings({
       ...settings,
-      defaultBrowser: e.target.value
+      defaultBrowser: e.target.value,
     });
   };
 
@@ -148,9 +153,14 @@ export default function SettingsView({ onBack }: SettingsViewProps) {
             value={settings.defaultBrowser}
             onChange={handleBrowserChange}
             className="w-full px-3 py-2 text-white bg-white/10 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 appearance-none"
-            style={{ backgroundImage: `url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%236b7280' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3e%3c/svg%3e")`, backgroundPosition: `right 0.5rem center`, backgroundRepeat: `no-repeat`, backgroundSize: `1.5em 1.5em` }}
+            style={{
+              backgroundImage: `url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%236b7280' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3e%3c/svg%3e")`,
+              backgroundPosition: `right 0.5rem center`,
+              backgroundRepeat: `no-repeat`,
+              backgroundSize: `1.5em 1.5em`,
+            }}
           >
-            {browserOptions.map(option => (
+            {browserOptions.map((option) => (
               <option key={option.value} value={option.value}>
                 {option.label}
               </option>
@@ -164,9 +174,11 @@ export default function SettingsView({ onBack }: SettingsViewProps) {
         {/* Error or success message */}
         <div className="flex-grow">
           {error && <p className="text-red-400 text-sm">{error}</p>}
-          {successMessage && <p className="text-green-400 text-sm">{successMessage}</p>}
+          {successMessage && (
+            <p className="text-green-400 text-sm">{successMessage}</p>
+          )}
         </div>
-        
+
         {/* Buttons */}
         <div className="flex space-x-2">
           <button
@@ -180,10 +192,10 @@ export default function SettingsView({ onBack }: SettingsViewProps) {
             disabled={isSaving}
             className="px-4 py-2 text-sm bg-blue-600 hover:bg-blue-700 text-white rounded-md focus:outline-none disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            {isSaving ? 'Saving...' : 'Save Settings'}
+            {isSaving ? "Saving..." : "Save Settings"}
           </button>
         </div>
       </div>
     </div>
   );
-} 
+}
