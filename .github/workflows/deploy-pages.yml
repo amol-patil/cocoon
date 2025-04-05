@@ -3,7 +3,7 @@
     on:
       # Runs on pushes targeting the default branch (usually main or master)
       push:
-        branches: ["main"] # Adjust if your default branch is different (e.g., master)
+        branches: ["master"] # Adjust if your default branch is different (e.g., master)
 
       # Allows you to run this workflow manually from the Actions tab
       workflow_dispatch:
