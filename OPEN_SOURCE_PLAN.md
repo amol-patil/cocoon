@@ -36,37 +36,25 @@ This document outlines the steps to prepare the Cocoon application for open-sour
 ## Phase 3: Documentation & Legal (Steps Renumbered)
 
 7.  **README.md (Essential - Formerly Step 9):**
-    *   [ ] Project description, features, screenshots.
-    *   [ ] Installation instructions (user) - **Must include Right-Click->Open for macOS & link to GitHub Releases**. 
-    *   [ ] Development setup instructions (contributor).
-    *   [ ] Basic usage.
-    *   [ ] License info.
-    *   [ ] Contributing section link.
+    *   [x] Project description, features, screenshots.
+    *   [x] Installation instructions (user) - **Must include Right-Click->Open for macOS & link to GitHub Releases**. 
+    *   [x] Development setup instructions (contributor).
+    *   [x] Basic usage.
+    *   [x] License info.
+    *   [ ] Contributing section link (Will link to non-existent file for now, or remove link).
 8.  **LICENSE File (Formerly Step 10):**
-    *   [ ] Choose an OSI-approved license (e.g., MIT).
-    *   [ ] Add full license text to `LICENSE` file.
+    *   [x] Choose an OSI-approved license (MIT).
+    *   [x] Add full license text to `LICENSE` file.
 9.  **CONTRIBUTING.md (Formerly Step 11):**
-    *   [ ] Bug reporting & feature suggestion process.
-    *   [ ] Dev environment setup details.
-    *   [ ] Code style guidelines.
-    *   [ ] PR submission process.
+    *   [ ] Skipped for now.
 10. **CODE_OF_CONDUCT.md (Formerly Step 12):**
-    *   [ ] Adopt a standard Code of Conduct (e.g., Contributor Covenant).
+    *   [ ] Skipped for now.
 11. **User Guide (Optional - Formerly Step 13):**
-    *   [ ] More detailed documentation (wiki, file, or website).
+    *   [ ] Skipped for now.
 
-## Phase 4: Release & Community Setup (Steps Renumbered)
+## Optional Steps
 
-12. **Repository Setup (Formerly Step 14):**
-    *   [ ] Create public repository (e.g., GitHub).
-    *   [ ] Push cleaned code & docs.
-    *   [ ] Configure repo settings (description, topics).
-    *   [ ] Set up Issue/PR Templates.
-13. **Initial Release (v1.0.0 - Formerly Step 15):**
-    *   [ ] Create Git tag.
-    *   [ ] Build ad-hoc signed production versions.
-    *   [ ] Create GitHub Release.
-    *   [ ] Write release notes.
-    *   [ ] Upload ad-hoc signed binaries.
-14. **Community Channels (Optional - Formerly Step 16):**
-    *   [ ] Set up Discord, mailing list, etc. if desired.
+12. **Create GitHub Pages Landing Site:**
+    *   [ ] Choose method (Markdown, SSG, HTML).
+    *   [ ] Create content (visuals, text).
+    *   [ ] Configure and deploy via GitHub Pages settings.

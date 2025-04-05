@@ -1,0 +1,149 @@
+---
+// src/pages/index.astro
+// Astro components can be imported here if needed
+// import BaseLayout from '../layouts/BaseLayout.astro'; // Example if using layouts
+---
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Cocoon - Simple macOS Overlay Search</title>
+    <!-- Basic Styling (can be moved to external CSS later) -->
+    <style>
+        body { font-family: system-ui, sans-serif; line-height: 1.6; background-color: #1a202c; color: #cbd5e0; margin: 0; padding: 0; }
+        .container { max-width: 900px; margin: 2rem auto; padding: 0 1rem; }
+        header { text-align: center; margin-bottom: 3rem; }
+        h1 { font-size: 2.5rem; color: #e2e8f0; margin-bottom: 0.5rem; }
+        h1 span { /* Optional: Style the emoji */ }
+        .tagline { font-size: 1.2rem; color: #a0aec0; }
+        .screenshot { display: block; max-width: 100%; height: auto; margin: 2rem auto; border-radius: 8px; box-shadow: 0 10px 20px rgba(0,0,0,0.3); }
+        section { margin-bottom: 2.5rem; }
+        h2 { font-size: 1.8rem; color: #e2e8f0; border-bottom: 1px solid #4a5568; padding-bottom: 0.5rem; margin-bottom: 1rem; }
+        ul { list-style: disc; padding-left: 20px; }
+        li { margin-bottom: 0.5rem; }
+        .cta-button {
+            display: inline-block;
+            background-color: #4299e1; /* Blue */
+            color: white;
+            padding: 0.8rem 1.5rem;
+            border-radius: 6px;
+            text-decoration: none;
+            font-weight: bold;
+            transition: background-color 0.2s ease;
+            margin-top: 1rem;
+        }
+        .cta-button:hover { background-color: #2b6cb0; }
+        footer { text-align: center; margin-top: 4rem; padding-top: 1rem; border-top: 1px solid #4a5568; font-size: 0.9rem; color: #718096; }
+        footer a { color: #63b3ed; text-decoration: none; }
+        footer a:hover { text-decoration: underline; }
+
+        /* Added Feature Grid Styles */
+        .features-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); /* Responsive grid */
+            gap: 1.5rem; /* Space between cards */
+            margin-top: 2rem;
+        }
+        .feature-card {
+            background-color: #2d3748; /* Slightly lighter background for cards */
+            padding: 1.5rem;
+            border-radius: 8px;
+            text-align: center;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.2);
+        }
+        .feature-icon {
+            font-size: 2.5rem; /* Make icon larger */
+            display: block;
+            margin-bottom: 1rem;
+        }
+        .feature-title {
+            font-size: 1.2rem;
+            font-weight: 600; /* Semi-bold */
+            color: #e2e8f0;
+            margin-bottom: 0.5rem;
+        }
+        .feature-card p {
+            font-size: 0.95rem;
+            color: #a0aec0; /* Lighter text for description */
+        }
+        section.features h2 {
+             text-align: center; /* Center the "Why Cocoon?" heading */
+             border-bottom: none; /* Remove border */
+             margin-bottom: 2rem;
+         }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>Cocoon</h1>
+            <p class="tagline">The fastest way to find your personal info on macOS.</p>
+        </header>
+
+        <section class="main-visual">
+            <img src="/screenshot-1.png" alt="Cocoon Application Screenshot" class="screenshot" />
+            <p style="text-align: center; margin-top: 2rem;">
+                <a href="https://github.com/amol-patil/cocoon/releases/latest" class="cta-button">
+                    Download Latest for macOS
+                </a>
+            </p>
+        </section>
+
+        <section class="description">
+            <h2>Tired of Digging for Info?</h2>
+            <p>
+                Cocoon is a simple macOS overlay application designed for quickly retrieving those Driving License numbers, Passport numbers, Health Cards and many others without needing to dig through your files (or worse Photos). Summon it instantly with a global shortcut, search, and copy what you need in seconds.
+            </p>
+             <p>
+                Bonus: it links directly to source file(s) so you can also attached the scanned copies if and when needed!
+            </p>
+        </section>
+
+        <section class="features">
+            <h2>Why Cocoon?</h2>
+            <div class="features-grid">
+                <div class="feature-card">
+                    <span class="feature-icon">⚡️</span>
+                    <h3 class="feature-title">Instant Access</h3>
+                    <p>Summon search instantly with a global keyboard shortcut (`Control+Option+Space`). No more window hunting.</p>
+                </div>
+                <div class="feature-card">
+                    <span class="feature-icon">🔍</span>
+                    <h3 class="feature-title">Fuzzy Search</h3>
+                    <p>Quickly find IDs (License, Passport, etc.) even if you only remember part of the name or number.</p>
+                </div>
+                <div class="feature-card">
+                    <span class="feature-icon">📋</span>
+                    <h3 class="feature-title">One-Click Copy</h3>
+                    <p>Copy details like numbers, expiry dates, or codes to your clipboard instantly.</p>
+                </div>
+                 <div class="feature-card">
+                    <span class="feature-icon">🔗</span>
+                    <h3 class="feature-title">Link to Files</h3>
+                    <p>Optionally link entries directly to source files (e.g., scanned PDFs) on your local drive.</p>
+                </div>
+                 <div class="feature-card">
+                    <span class="feature-icon">📝</span>
+                    <h3 class="feature-title">Simple Management</h3>
+                    <p>Easily add, edit, delete, and organize your entries as "Permanent" or "Temporary".</p>
+                </div>
+                <div class="feature-card">
+                    <span class="feature-icon">🔒</span>
+                    <h3 class="feature-title">Local & Private</h3>
+                    <p>Your data stays securely on your device in a simple JSON file. No cloud sync, no external storage.</p>
+                </div>
+            </div>
+        </section>
+
+        <footer>
+            <p>
+                Cocoon is open source. Check out the code on <a href="https://github.com/amol-patil/cocoon">GitHub</a>.
+            </p>
+            <p>
+                Licensed under the MIT License.
+            </p>
+        </footer>
+    </div>
+</body>
+</html>
