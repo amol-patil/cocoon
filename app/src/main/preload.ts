@@ -53,6 +53,8 @@ const electronAPI = {
         "save-documents",
         "get-settings",
         "save-settings",
+        "export-data",
+        "import-data",
       ]; // Add settings channels
       if (validInvokeChannels.includes(channel)) {
         return await ipcRenderer.invoke(channel, ...args);

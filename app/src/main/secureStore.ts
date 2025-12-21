@@ -1,14 +1,13 @@
-import { app } from "electron";
+import { app, safeStorage } from "electron";
 import * as path from "path";
+import * as fs from "fs/promises";
 import { Low } from "lowdb";
-import { JSONFile } from "lowdb/node";
 
 // --- Define Document structure ---
 interface DataStore {
   documents: Document[];
 }
 
-// Define the type for our document items (matching renderer)
 interface DocumentField {
   [key: string]: string | undefined;
 }
@@ -24,100 +23,130 @@ interface Document {
 
 // --- Configuration ---
 const IS_DEV = !app.isPackaged;
-// Use .json extension for unencrypted data
-const DB_FILENAME = IS_DEV ? "cocoon_data-dev.json" : "cocoon_data.json";
-
-console.log(`Running in ${IS_DEV ? "DEVELOPMENT" : "PRODUCTION"} mode.`);
-console.log(`Using data file: ${DB_FILENAME}`);
+const ENC_FILENAME = "cocoon_data.enc";
+const LEGACY_FILENAME = IS_DEV ? "cocoon_data-dev.json" : "cocoon_data.json";
 
 // --- Paths Setup ---
-const dbPath = path.join(app.getPath("userData"), DB_FILENAME);
-console.log("Database path:", dbPath);
+const userDataPath = app.getPath("userData");
+const encDbPath = path.join(userDataPath, ENC_FILENAME);
+const legacyDbPath = path.join(userDataPath, LEGACY_FILENAME);
+
+console.log(`[SecureStore] Encrypted DB Path: ${encDbPath}`);
+console.log(`[SecureStore] Legacy DB Path: ${legacyDbPath}`);
+
+// --- Custom Adapter for Lowdb with Encryption ---
+class EncryptedAdapter {
+  async read(): Promise<DataStore | null> {
+    // 1. Try reading encrypted file
+    try {
+      const encryptedBuffer = await fs.readFile(encDbPath);
+      if (safeStorage.isEncryptionAvailable()) {
+        const decryptedString = safeStorage.decryptString(encryptedBuffer);
+        return JSON.parse(decryptedString);
+      } else {
+        throw new Error("Generic encryption is not available on this machine.");
+      }
+    } catch (error: any) {
+      if (error.code === "ENOENT") {
+        // Encrypted file doesn't exist. Check for migration.
+        return await this.tryMigrateLegacy();
+      } else {
+        console.error("[SecureStore] Error reading encrypted file:", error);
+        throw error;
+      }
+    }
+  }
+
+  async write(data: DataStore): Promise<void> {
+    if (!safeStorage.isEncryptionAvailable()) {
+      throw new Error("Encryption is not available.");
+    }
+    const jsonStr = JSON.stringify(data);
+    const encryptedBuffer = safeStorage.encryptString(jsonStr);
+    await fs.writeFile(encDbPath, encryptedBuffer);
+  }
+
+  private async tryMigrateLegacy(): Promise<DataStore | null> {
+    console.log("[SecureStore] Checking for legacy file to migrate...");
+    try {
+      // Check if legacy file exists
+      await fs.access(legacyDbPath);
+
+      // Read legacy JSON
+      const jsonStr = await fs.readFile(legacyDbPath, "utf-8");
+      const data = JSON.parse(jsonStr) as DataStore;
+
+      console.log("[SecureStore] Found legacy data. Migrating to encrypted storage...");
+
+      // Write to new encrypted file
+      await this.write(data);
+
+      // Rename legacy file to .old
+      const backupPath = `${legacyDbPath}.old`;
+      await fs.rename(legacyDbPath, backupPath);
+      console.log(`[SecureStore] Migration complete. Legacy file moved to ${backupPath}`);
+
+      return data;
+    } catch (error: any) {
+      if (error.code === "ENOENT") {
+        console.log("[SecureStore] No legacy file found. Starting fresh.");
+        return null; // Return null to let Lowdb use default data
+      }
+      console.error("[SecureStore] Error during migration:", error);
+      return null;
+    }
+  }
+}
 
 // --- Database Setup ---
-
-// Define the default data structure
 const defaultData: DataStore = { documents: [] };
-
-// Create adapter and database instance
-const adapter = new JSONFile<DataStore>(dbPath);
-// Initialize Lowdb
-// We need to handle the case where the file doesn't exist yet
-// or is empty, which Lowdb v7+ handles gracefully during the first read/write.
+const adapter = new EncryptedAdapter();
 let db: Low<DataStore> | null = null;
 let dbInitializationPromise: Promise<void> | null = null;
 
-// Function to ensure DB is initialized
 async function ensureDbInitialized(): Promise<Low<DataStore>> {
-  if (db) {
-    return db;
-  }
-  // Prevent race conditions during initialization
+  if (db) return db;
+
   if (!dbInitializationPromise) {
     dbInitializationPromise = (async () => {
       try {
-        console.log("Initializing database instance...");
-        const lowDbInstance = new Low(adapter, defaultData);
-        // Attempt to read the file to load existing data or initialize with defaults
-        await lowDbInstance.read();
-        console.log(
-          `Database read complete. Loaded ${lowDbInstance.data.documents.length} documents initially.`,
-        );
-        db = lowDbInstance;
+        console.log("[SecureStore] Initializing database...");
+        db = new Low(adapter, defaultData);
+        await db.read();
+        console.log(`[SecureStore] DB loaded with ${db.data.documents.length} docs.`);
       } catch (err) {
-        console.error("Failed to initialize database:", err);
-        // In case of error, reset promise to allow retrying later?
+        console.error("[SecureStore] Initialization failed:", err);
         dbInitializationPromise = null;
-        // Depending on the error, db might be null here. Handle appropriately.
-        // For now, rethrow to signal failure.
-        throw new Error("Database initialization failed.");
+        throw err;
       }
     })();
   }
   await dbInitializationPromise;
-
-  if (!db) {
-    // Check again after promise resolution
-    throw new Error("Database initialization failed critically.");
-  }
+  if (!db) throw new Error("Database initialization failed critically.");
   return db;
 }
 
-// --- Data Access Functions (Exported) ---
+// --- Exported Functions ---
 
-/**
- * Loads all documents from the store.
- */
 export async function loadDocuments(): Promise<Document[]> {
   try {
     const currentDb = await ensureDbInitialized();
-    // Ensure data is loaded (might be redundant if read() was successful)
-    // await currentDb.read();
     return currentDb.data.documents || [];
   } catch (error) {
-    console.error("Error loading documents:", error);
-    // Depending on requirements, return empty array or rethrow
+    console.error("[SecureStore] Error loading documents:", error);
     return [];
   }
 }
 
-/**
- * Saves the entire documents array to the store.
- */
 export async function saveDocuments(documents: Document[]): Promise<void> {
   try {
     const currentDb = await ensureDbInitialized();
-    currentDb.data = { documents }; // Update in-memory data
-    await currentDb.write(); // Write changes to the JSON file
-    console.log(`Saved ${documents.length} documents to ${dbPath}`);
+    currentDb.data = { documents };
+    await currentDb.write();
+    console.log(`[SecureStore] Saved ${documents.length} encrypted documents.`);
   } catch (error) {
-    console.error("Error saving documents:", error);
-    throw new Error("Failed to save documents."); // Re-throw to indicate failure
+    console.error("[SecureStore] Error saving documents:", error);
+    throw new Error("Failed to save documents.");
   }
 }
 
-// Initialize eagerly - this will start the read process
-// ensureDbInitialized().catch(err => {
-//    console.error("Initial database load/init failed on startup:", err);
-//    // Decide how to handle this - maybe app should quit or show error?
-// });

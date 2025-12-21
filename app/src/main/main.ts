@@ -6,7 +6,9 @@ import {
   ipcMain,
   shell,
   Menu,
+  dialog,
 } from "electron";
+import * as fs from "fs/promises";
 import { exec } from "child_process";
 import {
   loadSettings,
@@ -159,57 +161,57 @@ function createAppMenu() {
     // App menu (macOS only)
     ...(isMac
       ? [
-          {
-            label: app.name,
-            submenu: [
-              { role: "about" },
-              { type: "separator" },
-              {
-                label: "Settings",
-                click: () => {
-                  // Tell renderer to show settings
-                  if (mainWindow) {
-                    mainWindow.webContents.send("open-settings");
+        {
+          label: app.name,
+          submenu: [
+            { role: "about" },
+            { type: "separator" },
+            {
+              label: "Settings",
+              click: () => {
+                // Tell renderer to show settings
+                if (mainWindow) {
+                  mainWindow.webContents.send("open-settings");
 
-                    // Show window if it's hidden
-                    if (!mainWindow.isVisible()) {
-                      mainWindow.show();
-                      mainWindow.focus();
-                    }
+                  // Show window if it's hidden
+                  if (!mainWindow.isVisible()) {
+                    mainWindow.show();
+                    mainWindow.focus();
                   }
-                },
+                }
               },
-              { type: "separator" },
-              { role: "quit" },
-            ],
-          },
-        ]
+            },
+            { type: "separator" },
+            { role: "quit" },
+          ],
+        },
+      ]
       : []),
 
     // For non-macOS, add a simple File menu with settings
     ...(!isMac
       ? [
-          {
-            label: "File",
-            submenu: [
-              {
-                label: "Settings",
-                click: () => {
-                  if (mainWindow) {
-                    mainWindow.webContents.send("open-settings");
+        {
+          label: "File",
+          submenu: [
+            {
+              label: "Settings",
+              click: () => {
+                if (mainWindow) {
+                  mainWindow.webContents.send("open-settings");
 
-                    if (!mainWindow.isVisible()) {
-                      mainWindow.show();
-                      mainWindow.focus();
-                    }
+                  if (!mainWindow.isVisible()) {
+                    mainWindow.show();
+                    mainWindow.focus();
                   }
-                },
+                }
               },
-              { type: "separator" },
-              { role: "quit" },
-            ],
-          },
-        ]
+            },
+            { type: "separator" },
+            { role: "quit" },
+          ],
+        },
+      ]
       : []),
 
     // Edit menu (include standard roles)
@@ -288,6 +290,89 @@ ipcMain.handle("save-settings", async (_event, newSettings: AppSettings) => {
     return { success: true };
   } catch (error) {
     console.error('[IPC] Error saving/applying settings:', error);
+    return { success: false, error: (error as Error).message };
+  }
+});
+
+// Handle Export Data
+ipcMain.handle("export-data", async () => {
+  try {
+    const { filePath } = await dialog.showSaveDialog({
+      title: "Export Cocoon Data",
+      defaultPath: "cocoon_backup.json",
+      filters: [{ name: "JSON Files", extensions: ["json"] }],
+    });
+
+    if (filePath) {
+      console.log(`[IPC] Exporting data to: ${filePath}`);
+      const documents = await loadDocuments();
+      await fs.writeFile(filePath, JSON.stringify({ documents }, null, 2));
+      return { success: true };
+    }
+    return { success: false, error: "Export cancelled" };
+  } catch (error) {
+    console.error("[IPC] Error exporting data:", error);
+    return { success: false, error: (error as Error).message };
+  }
+});
+
+// Handle Import Data
+ipcMain.handle("import-data", async () => {
+  try {
+    const { filePaths } = await dialog.showOpenDialog({
+      title: "Import Cocoon Data",
+      filters: [{ name: "JSON Files", extensions: ["json"] }],
+      properties: ["openFile"],
+    });
+
+    if (filePaths && filePaths.length > 0) {
+      const filePath = filePaths[0];
+      console.log(`[IPC] Importing data from: ${filePath}`);
+
+      const fileContent = await fs.readFile(filePath, "utf-8");
+      const data = JSON.parse(fileContent);
+
+      if (!data.documents || !Array.isArray(data.documents)) {
+        throw new Error("Invalid backup file format. Missing 'documents' array.");
+      }
+
+      // Merge Logic (Simple: Append unique IDs, or just replace?)
+      // PRD Plan said "Merge" by default.
+      // Let's load current docs, merge, then save.
+      const currentDocs = await loadDocuments();
+      const newDocs = data.documents;
+
+      // Create a map by ID for deduping
+      const docMap = new Map(currentDocs.map(d => [d.id, d]));
+      let addedCount = 0;
+      let updatedCount = 0;
+
+      for (const doc of newDocs) {
+        if (docMap.has(doc.id)) {
+          // Basic conflict resolution: Skip or Overwrite?
+          // Let's standardise on: Import overwrites matching IDs if they exist in backup? 
+          // Or simpler: just add missing.
+          // User expects "Restore". So typically overwrite is better for backup restoration.
+          // However, if merging from another machine, IDs might collide accidently? 
+          // Unlikely with UUIDs/Date-based IDs unless copied.
+          // Let's Overwrite for now.
+          docMap.set(doc.id, doc);
+          updatedCount++;
+        } else {
+          docMap.set(doc.id, doc);
+          addedCount++;
+        }
+      }
+
+      const mergedDocs = Array.from(docMap.values());
+      await saveDocuments(mergedDocs);
+
+      console.log(`[IPC] Import complete. Added: ${addedCount}, Updated: ${updatedCount}`);
+      return { success: true, message: `Imported ${addedCount} new, updated ${updatedCount} documents.` };
+    }
+    return { success: false, error: "Import cancelled" };
+  } catch (error) {
+    console.error("[IPC] Error importing data:", error);
     return { success: false, error: (error as Error).message };
   }
 });

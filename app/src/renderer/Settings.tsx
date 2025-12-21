@@ -103,6 +103,59 @@ export default function SettingsView({ onBack }: SettingsViewProps) {
     });
   };
 
+  // Handle Export
+  const handleExport = async () => {
+    try {
+      setIsSaving(true);
+      setError(null);
+      const result = (await window.ipc.invoke("export-data")) as {
+        success: boolean;
+        error?: string;
+      };
+      if (result.success) {
+        setSuccessMessage("Data exported successfully!");
+        setTimeout(() => setSuccessMessage(null), 3000);
+      } else if (result.error !== "Export cancelled") {
+        setError(result.error || "Failed to export data");
+      }
+    } catch (err: any) {
+      setError("Error exporting data: " + err.message);
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  // Handle Import
+  const handleImport = async () => {
+    if (
+      !window.confirm(
+        "Importing data will merge with your existing documents. Are you sure you want to proceed?",
+      )
+    ) {
+      return;
+    }
+
+    try {
+      setIsSaving(true);
+      setError(null);
+      const result = (await window.ipc.invoke("import-data")) as {
+        success: boolean;
+        error?: string;
+        message?: string;
+      };
+      if (result.success) {
+        setSuccessMessage(result.message || "Data imported successfully!");
+        setTimeout(() => setSuccessMessage(null), 3000);
+      } else if (result.error !== "Import cancelled") {
+        setError(result.error || "Failed to import data");
+      }
+    } catch (err: any) {
+      setError("Error importing data: " + err.message);
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
   if (isLoading) {
     return (
       <div className="flex items-center justify-center h-full">
@@ -166,6 +219,35 @@ export default function SettingsView({ onBack }: SettingsViewProps) {
               </option>
             ))}
           </select>
+        </div>
+
+        {/* Data Management Section */}
+        <div className="space-y-4 pt-4 border-t border-white/10">
+          <h3 className="text-md font-medium text-gray-200">Data Management</h3>
+          <p className="text-sm text-gray-400">
+            Backup your data or restore from a file.
+            <br />
+            <span className="text-xs text-yellow-500">
+              Note: Database is encrypted on this machine. Use Export to transfer
+              data to another device.
+            </span>
+          </p>
+          <div className="flex space-x-3">
+            <button
+              onClick={handleExport}
+              disabled={isSaving}
+              className="px-3 py-2 text-sm bg-blue-600/20 hover:bg-blue-600/40 text-blue-200 border border-blue-600/50 rounded-md focus:outline-none transition-colors"
+            >
+              📤 Export Backup
+            </button>
+            <button
+              onClick={handleImport}
+              disabled={isSaving}
+              className="px-3 py-2 text-sm bg-emerald-600/20 hover:bg-emerald-600/40 text-emerald-200 border border-emerald-600/50 rounded-md focus:outline-none transition-colors"
+            >
+              📥 Import Backup
+            </button>
+          </div>
         </div>
       </div>
 

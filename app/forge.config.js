@@ -9,13 +9,10 @@ module.exports = {
     appBundleId: "com.pixelpieco.cocoon",
     appCategoryType: "public.app-category.productivity",
     appCopyright: "Copyright © 2023 PixelPieCo",
-    osxSign: {
-      identity: '-', // Use '-' for ad-hoc signing
-      // Optional: Harden the runtime, useful even for ad-hoc
-      // 'hardened-runtime': true, 
-      // entitlements: './path/to/entitlements.plist', // Needed if using hardened runtime with specific capabilities
-      // 'gatekeeper-assess': false // Might be needed depending on electron-osx-sign version, but usually not required for ad-hoc
-    },
+    osxSign: {}, // Let electron-forge handle ad-hoc signing automatically for dev
+    // osxSign: {
+    //   identity: '-',
+    // },
     mas: false, // Not for Mac App Store
     env: {
       NODE_ENV: "production",
