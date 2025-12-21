@@ -10,6 +10,7 @@ interface Document {
   id: string;
   type: string;
   owner?: string;
+  category?: string;
   defaultField: string;
   fields: DocumentField;
   fileLink: string;
@@ -29,6 +30,23 @@ const getOwnerColor = (owner: string): { bg: string; text: string } => {
   ];
 
   const hash = owner
+    .split("")
+    .reduce((acc, char) => acc + char.charCodeAt(0), 0);
+  return colors[hash % colors.length];
+};
+
+// Category color mapping
+const getCategoryColor = (category: string): { bg: string; text: string } => {
+  const colors = [
+    { bg: "bg-indigo-600", text: "text-indigo-100" },
+    { bg: "bg-teal-600", text: "text-teal-100" },
+    { bg: "bg-orange-600", text: "text-orange-100" },
+    { bg: "bg-pink-600", text: "text-pink-100" },
+    { bg: "bg-lime-600", text: "text-lime-100" },
+    { bg: "bg-sky-600", text: "text-sky-100" },
+  ];
+
+  const hash = category
     .split("")
     .reduce((acc, char) => acc + char.charCodeAt(0), 0);
   return colors[hash % colors.length];
@@ -85,6 +103,13 @@ function ExpandedCard({
             className={`ml-2 px-2 py-0.5 rounded-full text-sm ${getOwnerColor(doc.owner).bg} ${getOwnerColor(doc.owner).text}`}
           >
             {doc.owner}
+          </span>
+        )}
+        {doc.category && (
+          <span
+            className={`ml-2 px-2 py-0.5 rounded-full text-sm ${getCategoryColor(doc.category).bg} ${getCategoryColor(doc.category).text}`}
+          >
+            {doc.category}
           </span>
         )}
       </h3>
@@ -257,14 +282,16 @@ function ManageDocumentsView({
 // Document Form Component
 interface DocumentFormProps {
   documentToEdit:
-    | (Omit<Document, "id" | "isTemporary"> & {
-        id?: string;
-        isTemporary?: boolean;
-      })
-    | null;
+  | (Omit<Document, "id" | "isTemporary"> & {
+    id?: string;
+    isTemporary?: boolean;
+  })
+  | null;
   onSave: (docData: Omit<Document, "id"> & { id?: string }) => void;
   onCancel: () => void;
   onEscape: () => void;
+  availableCategories: string[];
+  availableOwners: string[];
 }
 
 function DocumentForm({
@@ -272,9 +299,12 @@ function DocumentForm({
   onSave,
   onCancel,
   onEscape,
+  availableCategories,
+  availableOwners,
 }: DocumentFormProps) {
   const [type, setType] = useState("");
   const [owner, setOwner] = useState("");
+  const [category, setCategory] = useState("");
   const [defaultField, setDefaultField] = useState("");
   const [fileLink, setFileLink] = useState("");
   const [fields, setFields] = useState<{ key: string; value: string }[]>([
@@ -286,6 +316,7 @@ function DocumentForm({
     if (documentToEdit) {
       setType(documentToEdit.type || "");
       setOwner(documentToEdit.owner || "");
+      setCategory(documentToEdit.category || "");
       setDefaultField(documentToEdit.defaultField || "");
       setFileLink(documentToEdit.fileLink || "");
       setFields(
@@ -298,6 +329,7 @@ function DocumentForm({
     } else {
       setType("");
       setOwner("");
+      setCategory("");
       setDefaultField("");
       setFileLink("");
       setFields([{ key: "", value: "" }]);
@@ -350,6 +382,7 @@ function DocumentForm({
       id: documentToEdit?.id,
       type: type.trim(),
       owner: owner.trim() || undefined,
+      category: category.trim() || undefined,
       defaultField: defaultField.trim(),
       fileLink: fileLink.trim(),
       fields: fieldsObject,
@@ -405,12 +438,41 @@ function DocumentForm({
             <input
               id="owner"
               type="text"
+              list="owner-options"
               placeholder="e.g., Alice, Bob, Personal"
               value={owner}
               onChange={(e) => setOwner(e.target.value)}
               className="w-full px-3 py-2 text-white bg-white/10 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
             />
+            <datalist id="owner-options">
+              {availableOwners.map((o) => (
+                <option key={o} value={o} />
+              ))}
+            </datalist>
           </div>
+        </div>
+
+        <div>
+          <label
+            htmlFor="category"
+            className="block text-sm font-medium text-gray-300 mb-1"
+          >
+            Category (Optional)
+          </label>
+          <input
+            id="category"
+            type="text"
+            list="category-options"
+            placeholder="e.g., Banking, Insurance, Mortgage"
+            value={category}
+            onChange={(e) => setCategory(e.target.value)}
+            className="w-full px-3 py-2 text-white bg-white/10 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+          />
+          <datalist id="category-options">
+            {availableCategories.map((cat) => (
+              <option key={cat} value={cat} />
+            ))}
+          </datalist>
         </div>
 
         <h3 className="text-lg font-medium text-gray-200 pt-2">Fields</h3>
@@ -590,7 +652,9 @@ export default function App() {
 
     let finalSearchTerm = searchTerm;
     let targetOwner: string | null = null;
+    let targetCategory: string | null = null;
     const ownerMatch = searchTerm.match(/(\s|^)@(\w+)(\s|$)/);
+    const categoryMatch = searchTerm.match(/(\s|^)#(\w+)(\s|$)/);
 
     let documentsToSearch = allDocuments;
 
@@ -610,8 +674,24 @@ export default function App() {
       );
     }
 
-    // If only @owner was typed, show all their docs without fuzzy search
-    if (targetOwner && !finalSearchTerm && documentsToSearch.length > 0) {
+    if (categoryMatch && categoryMatch[2]) {
+      targetCategory = categoryMatch[2].toLowerCase();
+      console.log(`Filtering by category: ${targetCategory}`);
+      // Remove the #category part from the final search term
+      finalSearchTerm = finalSearchTerm.replace(/#\w+/g, " ").trim();
+      console.log(`Remaining search term: ${finalSearchTerm}`);
+
+      // Pre-filter documents by category (case-insensitive)
+      documentsToSearch = documentsToSearch.filter(
+        (doc) => doc.category && doc.category.toLowerCase() === targetCategory,
+      );
+      console.log(
+        `Found ${documentsToSearch.length} documents for category ${targetCategory}`,
+      );
+    }
+
+    // If only @owner and/or #category was typed, show all matching docs without fuzzy search
+    if ((targetOwner || targetCategory) && !finalSearchTerm && documentsToSearch.length > 0) {
       return documentsToSearch.map((doc) => ({
         item: doc,
         score: 0,
@@ -619,9 +699,8 @@ export default function App() {
       }));
     }
 
-    // If no remaining search term after extracting @owner, return empty results
-    // (or maybe return the filtered list above? Decided empty for now)
-    if (targetOwner && !finalSearchTerm) {
+    // If no remaining search term after extracting @owner/#category, return empty results
+    if ((targetOwner || targetCategory) && !finalSearchTerm) {
       return [];
     }
 
@@ -937,6 +1016,8 @@ export default function App() {
             onSave={handleSaveDocument}
             onCancel={handleCancelEdit}
             onEscape={hideWindow}
+            availableCategories={[...new Set(allDocuments.map(d => d.category).filter(Boolean) as string[])]}
+            availableOwners={[...new Set(allDocuments.map(d => d.owner).filter(Boolean) as string[])]}
           />
         );
       }
@@ -1022,6 +1103,13 @@ export default function App() {
                               className={`ml-2 px-2 py-0.5 rounded-full text-sm ${getOwnerColor(result.item.owner).bg} ${getOwnerColor(result.item.owner).text}`}
                             >
                               {result.item.owner}
+                            </span>
+                          )}
+                          {result.item.category && (
+                            <span
+                              className={`ml-2 px-2 py-0.5 rounded-full text-sm ${getCategoryColor(result.item.category).bg} ${getCategoryColor(result.item.category).text}`}
+                            >
+                              {result.item.category}
                             </span>
                           )}
                         </h3>

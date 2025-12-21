@@ -15,6 +15,7 @@ interface Document {
   id: string;
   type: string;
   owner?: string;
+  category?: string;
   defaultField: string;
   fields: DocumentField;
   fileLink: string;
