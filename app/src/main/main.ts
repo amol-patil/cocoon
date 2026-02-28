@@ -7,8 +7,11 @@ import {
   shell,
   Menu,
   dialog,
+  clipboard,
+  systemPreferences,
 } from "electron";
 import * as fs from "fs/promises";
+import * as crypto from "crypto";
 import { exec } from "child_process";
 import {
   loadSettings,
@@ -68,7 +71,7 @@ function createWindow() {
     contextIsolation: true,
     preload: preloadScriptPath,
     webSecurity: true,
-    sandbox: false,
+    sandbox: true,
   };
 
   mainWindow = new BrowserWindow({
@@ -135,9 +138,37 @@ function createWindow() {
   console.log("Main window created successfully.");
 }
 
-// Function to toggle window (no changes needed here)
+// Touch ID authentication gate
+let isAuthenticating = false;
+let lastAuthTime = 0;
+const AUTH_TIMEOUT_MS = 15 * 60 * 1000; // 15 minutes
+
+async function showWindowWithAuth() {
+  if (!mainWindow) return;
+  if (isAuthenticating) return;
+
+  isAuthenticating = true;
+  try {
+    const now = Date.now();
+    const withinGracePeriod = now - lastAuthTime < AUTH_TIMEOUT_MS;
+
+    if (appSettings.biometricEnabled && process.platform === "darwin" && !withinGracePeriod) {
+      await systemPreferences.promptTouchID("Unlock Cocoon");
+      lastAuthTime = Date.now();
+    }
+    mainWindow.show();
+    mainWindow.focus();
+  } catch {
+    // User cancelled Touch ID or not available — do not show window
+    console.log("[Auth] Touch ID cancelled or unavailable.");
+  } finally {
+    isAuthenticating = false;
+  }
+}
+
+// Function to toggle window
 function toggleWindow() {
-  console.log("toggleWindow function called."); // Log toggle function call
+  console.log("toggleWindow function called.");
   if (!mainWindow) {
     console.log("toggleWindow: mainWindow is null, returning.");
     return;
@@ -146,10 +177,8 @@ function toggleWindow() {
     console.log("toggleWindow: Window is visible, hiding.");
     mainWindow.hide();
   } else {
-    console.log("toggleWindow: Window is hidden, showing and focusing.");
-    // TODO: Center window before showing?
-    mainWindow.show();
-    mainWindow.focus();
+    console.log("toggleWindow: Window is hidden, showing via auth.");
+    showWindowWithAuth();
   }
 }
 
@@ -175,8 +204,7 @@ function createAppMenu() {
 
                   // Show window if it's hidden
                   if (!mainWindow.isVisible()) {
-                    mainWindow.show();
-                    mainWindow.focus();
+                    showWindowWithAuth();
                   }
                 }
               },
@@ -201,8 +229,7 @@ function createAppMenu() {
                   mainWindow.webContents.send("open-settings");
 
                   if (!mainWindow.isVisible()) {
-                    mainWindow.show();
-                    mainWindow.focus();
+                    showWindowWithAuth();
                   }
                 }
               },
@@ -294,19 +321,74 @@ ipcMain.handle("save-settings", async (_event, newSettings: AppSettings) => {
   }
 });
 
-// Handle Export Data
-ipcMain.handle("export-data", async () => {
+// Encryption helpers for export/import
+function deriveKey(password: string, salt: Buffer): Buffer {
+  return crypto.pbkdf2Sync(password, salt, 600_000, 32, "sha256");
+}
+
+function encryptData(plaintext: string, password: string): string {
+  const salt = crypto.randomBytes(32);
+  const iv = crypto.randomBytes(12);
+  const key = deriveKey(password, salt);
+
+  const cipher = crypto.createCipheriv("aes-256-gcm", key, iv);
+  const encrypted = Buffer.concat([
+    cipher.update(plaintext, "utf8"),
+    cipher.final(),
+  ]);
+  const tag = cipher.getAuthTag();
+
+  const backup = {
+    version: 1,
+    salt: salt.toString("base64"),
+    iv: iv.toString("base64"),
+    tag: tag.toString("base64"),
+    ciphertext: encrypted.toString("base64"),
+  };
+  return JSON.stringify(backup, null, 2);
+}
+
+function decryptData(backupJson: string, password: string): string {
+  const backup = JSON.parse(backupJson);
+  if (backup.version !== 1) throw new Error("Unsupported backup version");
+
+  const salt = Buffer.from(backup.salt, "base64");
+  const iv = Buffer.from(backup.iv, "base64");
+  const tag = Buffer.from(backup.tag, "base64");
+  const ciphertext = Buffer.from(backup.ciphertext, "base64");
+  const key = deriveKey(password, salt);
+
+  const decipher = crypto.createDecipheriv("aes-256-gcm", key, iv);
+  decipher.setAuthTag(tag);
+  const decrypted = Buffer.concat([
+    decipher.update(ciphertext),
+    decipher.final(),
+  ]);
+  return decrypted.toString("utf8");
+}
+
+// Handle Export Data (encrypted)
+ipcMain.handle("export-data", async (_event, password: string) => {
   try {
+    if (!password) {
+      return { success: false, error: "Password is required for export" };
+    }
+
     const { filePath } = await dialog.showSaveDialog({
       title: "Export Cocoon Data",
-      defaultPath: "cocoon_backup.json",
-      filters: [{ name: "JSON Files", extensions: ["json"] }],
+      defaultPath: "cocoon_backup.cocoon",
+      filters: [
+        { name: "Cocoon Backup", extensions: ["cocoon"] },
+        { name: "All Files", extensions: ["*"] },
+      ],
     });
 
     if (filePath) {
-      console.log(`[IPC] Exporting data to: ${filePath}`);
+      console.log(`[IPC] Exporting encrypted data to: ${filePath}`);
       const documents = await loadDocuments();
-      await fs.writeFile(filePath, JSON.stringify({ documents }, null, 2));
+      const plaintext = JSON.stringify({ documents });
+      const encrypted = encryptData(plaintext, password);
+      await fs.writeFile(filePath, encrypted, "utf-8");
       return { success: true };
     }
     return { success: false, error: "Export cancelled" };
@@ -316,46 +398,69 @@ ipcMain.handle("export-data", async () => {
   }
 });
 
-// Handle Import Data
-ipcMain.handle("import-data", async () => {
+// Handle Import Data (supports both encrypted .cocoon and legacy plaintext .json)
+ipcMain.handle("import-data", async (_event, passwordOrOpts?: string | { password: string; filePath: string }) => {
+  // If called with password+filePath object, this is the second call after the user entered a password
+  const isRetryWithPassword = typeof passwordOrOpts === "object" && passwordOrOpts !== null;
+  const password = isRetryWithPassword ? passwordOrOpts.password : (typeof passwordOrOpts === "string" ? passwordOrOpts : undefined);
+  const providedFilePath = isRetryWithPassword ? passwordOrOpts.filePath : undefined;
   try {
-    const { filePaths } = await dialog.showOpenDialog({
-      title: "Import Cocoon Data",
-      filters: [{ name: "JSON Files", extensions: ["json"] }],
-      properties: ["openFile"],
-    });
+    let filePath = providedFilePath;
 
-    if (filePaths && filePaths.length > 0) {
-      const filePath = filePaths[0];
+    if (!filePath) {
+      const { filePaths } = await dialog.showOpenDialog({
+        title: "Import Cocoon Data",
+        filters: [
+          { name: "Cocoon Backup", extensions: ["cocoon"] },
+          { name: "JSON Files", extensions: ["json"] },
+          { name: "All Files", extensions: ["*"] },
+        ],
+        properties: ["openFile"],
+      });
+      if (filePaths && filePaths.length > 0) {
+        filePath = filePaths[0];
+      }
+    }
+
+    if (filePath) {
       console.log(`[IPC] Importing data from: ${filePath}`);
 
       const fileContent = await fs.readFile(filePath, "utf-8");
-      const data = JSON.parse(fileContent);
+      const parsed = JSON.parse(fileContent);
 
-      if (!data.documents || !Array.isArray(data.documents)) {
-        throw new Error("Invalid backup file format. Missing 'documents' array.");
+      let data: { documents: Document[] };
+
+      // Detect format: encrypted (has ciphertext field) vs legacy (has documents array)
+      if (parsed.ciphertext) {
+        // Encrypted format
+        if (!password) {
+          return { success: false, error: "Password is required for encrypted backup", needsPassword: true, filePath };
+        }
+        try {
+          const decrypted = decryptData(fileContent, password);
+          data = JSON.parse(decrypted);
+        } catch {
+          return { success: false, error: "Incorrect password or corrupted backup file" };
+        }
+      } else if (parsed.documents && Array.isArray(parsed.documents)) {
+        // Legacy plaintext format
+        data = parsed;
+      } else {
+        throw new Error("Invalid backup file format.");
       }
 
-      // Merge Logic (Simple: Append unique IDs, or just replace?)
-      // PRD Plan said "Merge" by default.
-      // Let's load current docs, merge, then save.
-      const currentDocs = await loadDocuments();
-      const newDocs = data.documents;
+      if (!data.documents || !Array.isArray(data.documents)) {
+        throw new Error("Invalid backup data. Missing 'documents' array.");
+      }
 
-      // Create a map by ID for deduping
+      // Merge: overwrite matching IDs, add new
+      const currentDocs = await loadDocuments();
       const docMap = new Map(currentDocs.map(d => [d.id, d]));
       let addedCount = 0;
       let updatedCount = 0;
 
-      for (const doc of newDocs) {
+      for (const doc of data.documents) {
         if (docMap.has(doc.id)) {
-          // Basic conflict resolution: Skip or Overwrite?
-          // Let's standardise on: Import overwrites matching IDs if they exist in backup? 
-          // Or simpler: just add missing.
-          // User expects "Restore". So typically overwrite is better for backup restoration.
-          // However, if merging from another machine, IDs might collide accidently? 
-          // Unlikely with UUIDs/Date-based IDs unless copied.
-          // Let's Overwrite for now.
           docMap.set(doc.id, doc);
           updatedCount++;
         } else {
@@ -377,7 +482,17 @@ ipcMain.handle("import-data", async () => {
   }
 });
 
-// Handle other IPC (hide-window, open-external-link) (no changes needed)
+// Handle clipboard clear
+ipcMain.on("write-clipboard", (_event, text: string) => {
+  clipboard.writeText(text);
+});
+
+ipcMain.on("clear-clipboard", () => {
+  console.log("[IPC] Clearing clipboard");
+  clipboard.writeText("");
+});
+
+// Handle other IPC (hide-window, open-external-link)
 ipcMain.on("hide-window", (_event) => {
   console.log("[IPC] Received hide-window request");
   if (mainWindow) {

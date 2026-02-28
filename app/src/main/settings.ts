@@ -9,6 +9,10 @@ export interface AppSettings {
   theme: "light" | "dark" | "system";
   launchAtStartup: boolean;
   showInDock: boolean;
+  owners: string[];
+  categories: string[];
+  biometricEnabled: boolean;
+  clipboardAutoClearSeconds: number; // 0 = disabled
 }
 
 // Default settings
@@ -18,10 +22,14 @@ export const DEFAULT_SETTINGS: AppSettings = {
   theme: "system",
   launchAtStartup: false,
   showInDock: true,
+  owners: [],
+  categories: [],
+  biometricEnabled: true,
+  clipboardAutoClearSeconds: 30,
 };
 
 // Determine settings filename based on environment
-const SETTINGS_FILENAME = !app.isPackaged ? "settings.json" : "settings-dev.json";
+const SETTINGS_FILENAME = app.isPackaged ? "settings.json" : "settings-dev.json";
 const settingsPath = path.join(app.getPath("userData"), SETTINGS_FILENAME);
 console.log(`Using settings file: ${SETTINGS_FILENAME} at ${settingsPath}`);
 

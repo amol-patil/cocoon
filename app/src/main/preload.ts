@@ -1,4 +1,4 @@
-import { contextBridge, ipcRenderer, clipboard } from "electron";
+import { contextBridge, ipcRenderer } from "electron";
 
 console.log("--- Preload Script (preload.ts) Starting ---");
 
@@ -6,14 +6,14 @@ console.log("--- Preload Script (preload.ts) Starting ---");
 const electronAPI = {
   clipboard: {
     writeText: (text: string) => {
-      console.log("[Preload] Writing to clipboard:", text);
-      return clipboard.writeText(text);
+      console.log("[Preload] Writing to clipboard: [redacted]");
+      ipcRenderer.send("write-clipboard", text);
     },
   },
   ipc: {
     // Send (fire-and-forget)
     send: (channel: string, data: any) => {
-      const validSendChannels = ["open-external-link", "hide-window"]; // Whitelist send channels
+      const validSendChannels = ["open-external-link", "hide-window", "clear-clipboard", "write-clipboard"]; // Whitelist send channels
       if (validSendChannels.includes(channel)) {
         ipcRenderer.send(channel, data);
       } else {

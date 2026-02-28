@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useEffect, useCallback } from "react";
+import React, { useState, useMemo, useEffect, useCallback, useRef } from "react";
 import Fuse from "fuse.js";
 import SettingsView from "./Settings";
 
@@ -606,6 +606,8 @@ type AppViewMode = "search" | "manage" | "editForm" | "settings";
 export default function App() {
   // === State ===
   const [allDocuments, setAllDocuments] = useState<Document[]>([]);
+  const [appSettings, setAppSettings] = useState<{ owners: string[]; categories: string[]; clipboardAutoClearSeconds: number }>({ owners: [], categories: [], clipboardAutoClearSeconds: 30 });
+  const clearTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [isLoading, setIsLoading] = useState(true); // Loading state
   const [error, setError] = useState<string | null>(null); // Error state
   const [searchTerm, setSearchTerm] = useState("");
@@ -641,6 +643,12 @@ export default function App() {
       .finally(() => {
         setIsLoading(false);
       });
+    // Also load settings for owners/categories
+    window.ipc.invoke("get-settings").then((settings: any) => {
+      setAppSettings({ owners: settings.owners || [], categories: settings.categories || [], clipboardAutoClearSeconds: settings.clipboardAutoClearSeconds ?? 30 });
+    }).catch((err: Error) => {
+      console.error("Error loading settings:", err);
+    });
   }, []); // Run only once on mount
 
   // === Search Logic ===
@@ -840,11 +848,20 @@ export default function App() {
   const handleCopy = useCallback((text: string) => {
     try {
       window.electronClipboard.writeText(text);
-      console.log(`Copied: ${text}`);
+      console.log("Copied field to clipboard.");
+
+      // Schedule clipboard auto-clear
+      if (clearTimerRef.current) clearTimeout(clearTimerRef.current);
+      if (appSettings.clipboardAutoClearSeconds > 0) {
+        clearTimerRef.current = setTimeout(() => {
+          window.ipc.send("clear-clipboard", null);
+          console.log("Clipboard auto-cleared.");
+        }, appSettings.clipboardAutoClearSeconds * 1000);
+      }
     } catch (error) {
       console.error("Failed to copy text:", error);
     }
-  }, []);
+  }, [appSettings.clipboardAutoClearSeconds]);
 
   // Use IPC to open link
   const handleOpenFile = useCallback((link: string) => {
@@ -1016,8 +1033,8 @@ export default function App() {
             onSave={handleSaveDocument}
             onCancel={handleCancelEdit}
             onEscape={hideWindow}
-            availableCategories={[...new Set(allDocuments.map(d => d.category).filter(Boolean) as string[])]}
-            availableOwners={[...new Set(allDocuments.map(d => d.owner).filter(Boolean) as string[])]}
+            availableCategories={[...new Set([...appSettings.categories, ...allDocuments.map(d => d.category).filter(Boolean) as string[]])]}
+            availableOwners={[...new Set([...appSettings.owners, ...allDocuments.map(d => d.owner).filter(Boolean) as string[]])]}
           />
         );
       }
