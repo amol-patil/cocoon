@@ -721,6 +721,7 @@ export default function App() {
   const [docToEdit, setDocToEdit] = useState<Document | null>(null);
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   const [editReturnView, setEditReturnView] = useState<AppViewMode>("search");
+  const [showClearConfirm, setShowClearConfirm] = useState(false);
 
   // Re-initialize Fuse when documents change (use all documents)
   const fuse = useMemo(() => {
@@ -931,6 +932,13 @@ export default function App() {
     [appSettings],
   );
 
+  const handleClearTemporary = useCallback(async () => {
+    const updatedDocs = allDocuments.filter(doc => !doc.isTemporary);
+    setAllDocuments(updatedDocs);
+    setShowClearConfirm(false);
+    await saveDocumentsIPC(updatedDocs);
+  }, [allDocuments, saveDocumentsIPC]);
+
   const handleDeleteCategory = useCallback(
     async (name: string) => {
       // Remove category from all documents that use it
@@ -1052,8 +1060,12 @@ export default function App() {
         e.preventDefault();
         console.log("Global Escape key pressed");
 
+        // Close confirmation dialog first
+        if (showClearConfirm) {
+          setShowClearConfirm(false);
+        }
         // For expanded card view, just collapse
-        if (viewMode === "search" && expandedDocId) {
+        else if (viewMode === "search" && expandedDocId) {
           setExpandedDocId(null);
         }
         // For edit form, just cancel edit
@@ -1074,7 +1086,7 @@ export default function App() {
     return () => {
       document.removeEventListener("keydown", handleGlobalEscape);
     };
-  }, [viewMode, expandedDocId, handleCancelEdit, hideWindow]);
+  }, [viewMode, expandedDocId, handleCancelEdit, hideWindow, showClearConfirm]);
 
   // === Keyboard Handler ===
   const handleKeyDown = useCallback(
@@ -1154,9 +1166,9 @@ export default function App() {
   // Resize window based on view mode
   useEffect(() => {
     if (viewMode === "editForm") {
-      window.ipc.send("resize-window", { width: 700, height: 560 });
+      window.ipc.send("resize-window", { width: 760, height: 560 });
     } else {
-      window.ipc.send("resize-window", { width: 680, height: 480 });
+      window.ipc.send("resize-window", { width: 760, height: 480 });
     }
   }, [viewMode]);
 
@@ -1323,20 +1335,17 @@ export default function App() {
                 )}
 
                 {/* Document list */}
-                <div className="flex-1 overflow-y-auto px-6 py-3 flex flex-col gap-2 [-webkit-app-region:no-drag]">
-                  {filteredResults.length === 0 && (
-                    <p
-                      className="text-center mt-6 text-[13px]"
-                      style={{ color: "#4A4A4C", fontFamily: "'Inter', sans-serif" }}
-                    >
-                      {searchTerm ? "No documents found" : "No documents yet — click + Add to get started"}
-                    </p>
-                  )}
+                {(() => {
+                  const permanentResultsWithIdx = filteredResults
+                    .map((r, i) => ({ result: r, globalIndex: i }))
+                    .filter(({ result }) => !result.item.isTemporary);
+                  const temporaryResultsWithIdx = filteredResults
+                    .map((r, i) => ({ result: r, globalIndex: i }))
+                    .filter(({ result }) => result.item.isTemporary);
 
-                  {filteredResults.map((result, index) => {
-                    const doc = result.item;
+                  const renderDocCard = (doc: Document, globalIndex: number, isTemp: boolean) => {
                     const barColor = getDocTypeColor(doc);
-                    const isSelected = selectedIndex === index;
+                    const isSelected = selectedIndex === globalIndex;
                     const expiry = doc.fields.expires || doc.fields.expiry || doc.fields["expiration"] || null;
 
                     return (
@@ -1345,15 +1354,33 @@ export default function App() {
                         className="flex items-center gap-3.5 px-[18px] py-[14px] rounded-[14px] cursor-pointer focus:outline-none transition-colors"
                         style={{
                           background: isSelected ? "#2A2A2C" : "#242426",
-                          boxShadow: isSelected ? `inset 0 0 0 1px ${barColor}40` : undefined,
+                          boxShadow: isSelected
+                            ? `inset 0 0 0 1px ${barColor}40`
+                            : isTemp ? "inset 0 0 0 1px #3A3A3C" : undefined,
                         }}
-                        onClick={() => setSelectedIndex(index)}
+                        onClick={() => setSelectedIndex(globalIndex)}
                       >
-                        {/* Colored left bar */}
-                        <div
-                          className="w-[3px] rounded-sm shrink-0"
-                          style={{ height: 40, background: barColor }}
-                        />
+                        {/* Left bar: solid for permanent, dashed for temporary */}
+                        {isTemp ? (
+                          <div className="flex flex-col shrink-0" style={{ width: 3, gap: 4 }}>
+                            {[0, 1, 2, 3].map(i => (
+                              <div
+                                key={i}
+                                style={{
+                                  width: 3,
+                                  height: 8,
+                                  borderRadius: 2,
+                                  background: i % 2 === 0 ? "#6E6E70" : "transparent",
+                                }}
+                              />
+                            ))}
+                          </div>
+                        ) : (
+                          <div
+                            className="w-[3px] rounded-sm shrink-0"
+                            style={{ height: 40, background: barColor }}
+                          />
+                        )}
 
                         {/* Document info */}
                         <div className="flex-1 min-w-0 flex flex-col gap-[3px]">
@@ -1367,6 +1394,18 @@ export default function App() {
                             className="flex items-center gap-2 flex-wrap"
                             style={{ fontFamily: "'Inter', -apple-system, sans-serif" }}
                           >
+                            {isTemp && (
+                              <span
+                                className="flex items-center gap-1 text-[11px] font-medium"
+                                style={{ color: "#6E6E70" }}
+                              >
+                                <svg width="10" height="10" viewBox="0 0 10 10" fill="none" style={{ flexShrink: 0 }}>
+                                  <circle cx="5" cy="5" r="4" stroke="currentColor" strokeWidth="1.1"/>
+                                  <path d="M5 3v2.2l1.3 1.3" stroke="currentColor" strokeWidth="1.1" strokeLinecap="round" strokeLinejoin="round"/>
+                                </svg>
+                                Temporary
+                              </span>
+                            )}
                             {doc.category && (
                               <span
                                 className="flex items-center gap-1 text-[11px] font-medium"
@@ -1391,7 +1430,6 @@ export default function App() {
 
                         {/* Action buttons: copy → open → edit */}
                         <div className="flex gap-1.5 shrink-0">
-                          {/* Copy — gold icon per design */}
                           <button
                             onClick={(e) => {
                               e.stopPropagation();
@@ -1408,7 +1446,6 @@ export default function App() {
                               <path d="M3 8.5H2a1 1 0 0 1-1-1V2a1 1 0 0 1 1-1h5.5a1 1 0 0 1 1 1v1" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round"/>
                             </svg>
                           </button>
-                          {/* Open — gray icon, only when fileLink exists */}
                           {doc.fileLink && (
                             <button
                               onClick={(e) => {
@@ -1427,7 +1464,6 @@ export default function App() {
                               </svg>
                             </button>
                           )}
-                          {/* Edit — gray pencil icon */}
                           <button
                             onClick={(e) => {
                               e.stopPropagation();
@@ -1445,20 +1481,93 @@ export default function App() {
                         </div>
                       </div>
                     );
-                  })}
-                </div>
+                  };
+
+                  return (
+                    <div className="flex-1 overflow-y-auto px-6 py-3 flex flex-col gap-2 [-webkit-app-region:no-drag]">
+                      {filteredResults.length === 0 && (
+                        <p
+                          className="text-center mt-6 text-[13px]"
+                          style={{ color: "#4A4A4C", fontFamily: "'Inter', sans-serif" }}
+                        >
+                          {searchTerm ? "No documents found" : "No documents yet — click + Add to get started"}
+                        </p>
+                      )}
+
+                      {/* Permanent documents */}
+                      {permanentResultsWithIdx.map(({ result, globalIndex }) =>
+                        renderDocCard(result.item, globalIndex, false)
+                      )}
+
+                      {/* Temporary section header */}
+                      {temporaryResultsWithIdx.length > 0 && (
+                        <div className="flex items-center justify-between pt-1 pb-0.5 [-webkit-app-region:no-drag]">
+                          <div className="flex items-center gap-1.5">
+                            <svg width="11" height="11" viewBox="0 0 11 11" fill="none">
+                              <circle cx="5.5" cy="5.5" r="4.5" stroke="#6E6E70" strokeWidth="1.1"/>
+                              <path d="M5.5 3.2v2.5l1.5 1.5" stroke="#6E6E70" strokeWidth="1.1" strokeLinecap="round" strokeLinejoin="round"/>
+                            </svg>
+                            <span
+                              style={{
+                                color: "#6E6E70",
+                                fontFamily: "'Inter', sans-serif",
+                                fontSize: 10,
+                                fontWeight: 600,
+                                letterSpacing: "0.08em",
+                              }}
+                            >
+                              TEMPORARY ITEMS
+                            </span>
+                          </div>
+                          <button
+                            onClick={() => setShowClearConfirm(true)}
+                            className="focus:outline-none transition-colors hover:opacity-80"
+                            style={{
+                              color: "#D94A4A",
+                              fontFamily: "'Inter', sans-serif",
+                              fontSize: 11,
+                              fontWeight: 500,
+                            }}
+                          >
+                            Clear all
+                          </button>
+                        </div>
+                      )}
+
+                      {/* Temporary documents */}
+                      {temporaryResultsWithIdx.map(({ result, globalIndex }) =>
+                        renderDocCard(result.item, globalIndex, true)
+                      )}
+                    </div>
+                  );
+                })()}
 
                 {/* Footer */}
                 <div
-                  className="flex justify-between items-center px-6 py-3 flex-shrink-0"
+                  className="flex justify-between items-center px-6 py-3 flex-shrink-0 [-webkit-app-region:no-drag]"
                   style={{ borderTop: "1px solid #2A2A2C" }}
                 >
-                  <span
-                    className="text-[11px]"
-                    style={{ color: "#4A4A4C", fontFamily: "'Inter', sans-serif" }}
-                  >
-                    {allDocuments.length} {allDocuments.length === 1 ? "document" : "documents"}
-                  </span>
+                  <div className="flex items-center gap-3">
+                    <span
+                      className="text-[11px]"
+                      style={{ color: "#4A4A4C", fontFamily: "'Inter', sans-serif" }}
+                    >
+                      {allDocuments.length} {allDocuments.length === 1 ? "document" : "documents"}
+                    </span>
+                    {allDocuments.some(d => d.isTemporary) && (
+                      <button
+                        onClick={() => setShowClearConfirm(true)}
+                        className="flex items-center gap-1 focus:outline-none transition-colors hover:opacity-80"
+                        style={{ color: "#D94A4A", fontFamily: "'Inter', sans-serif", fontSize: 11, fontWeight: 500 }}
+                      >
+                        <svg width="10" height="10" viewBox="0 0 10 10" fill="none">
+                          <circle cx="5" cy="5" r="4" stroke="currentColor" strokeWidth="1.1"/>
+                          <path d="M5 3v2.2l1.3 1.3" stroke="currentColor" strokeWidth="1.1" strokeLinecap="round" strokeLinejoin="round"/>
+                        </svg>
+                        Clear temporary
+                      </button>
+                    )}
+                  </div>
                   <div className="flex gap-3 items-center">
                     {[
                       { key: "Esc", label: "close" },
@@ -1486,6 +1595,103 @@ export default function App() {
                     ))}
                   </div>
                 </div>
+
+                {/* Clear Temporary Confirmation Popover */}
+                {showClearConfirm && (() => {
+                  const tempDocs = allDocuments.filter(d => d.isTemporary);
+                  return (
+                    <div
+                      className="absolute inset-0 flex items-end justify-center [-webkit-app-region:no-drag]"
+                      style={{ paddingBottom: 56, paddingLeft: 24, paddingRight: 24, zIndex: 50 }}
+                      onClick={() => setShowClearConfirm(false)}
+                    >
+                      <div
+                        className="w-[260px] overflow-hidden"
+                        style={{
+                          background: "#2A2A2C",
+                          border: "1px solid #C9A962",
+                          borderRadius: 14,
+                          boxShadow: "0 8px 32px rgba(0,0,0,0.6)",
+                          position: "relative",
+                        }}
+                        onClick={(e) => e.stopPropagation()}
+                      >
+                        {/* Gold triangle arrow pointing down toward footer */}
+                        <div
+                          style={{
+                            position: "absolute",
+                            bottom: -7,
+                            left: "50%",
+                            transform: "translateX(-50%)",
+                            width: 0,
+                            height: 0,
+                            borderLeft: "7px solid transparent",
+                            borderRight: "7px solid transparent",
+                            borderTop: "7px solid #C9A962",
+                          }}
+                        />
+                        <div
+                          style={{
+                            position: "absolute",
+                            bottom: -5,
+                            left: "50%",
+                            transform: "translateX(-50%)",
+                            width: 0,
+                            height: 0,
+                            borderLeft: "6px solid transparent",
+                            borderRight: "6px solid transparent",
+                            borderTop: "6px solid #2A2A2C",
+                          }}
+                        />
+
+                        {/* Header */}
+                        <div className="flex flex-col gap-2 px-4 pt-4 pb-3">
+                          <div className="flex items-start gap-2.5">
+                            <div
+                              className="flex items-center justify-center shrink-0 mt-0.5"
+                              style={{ width: 28, height: 28, borderRadius: "50%", background: "#D94A4A20" }}
+                            >
+                              <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+                                <path d="M2 3.5h10M5 3.5V2.5h4v1M4 3.5l.5 8h5l.5-8" stroke="#D94A4A" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round"/>
+                              </svg>
+                            </div>
+                            <div className="flex flex-col gap-1">
+                              <span style={{ color: "#F5F5F0", fontFamily: "'Inter', sans-serif", fontSize: 13, fontWeight: 600 }}>
+                                Remove temporary items?
+                              </span>
+                              <span style={{ color: "#6E6E70", fontFamily: "'Inter', sans-serif", fontSize: 11, lineHeight: 1.4 }}>
+                                {tempDocs.length === 1
+                                  ? `"${tempDocs[0].type}" will be removed.`
+                                  : tempDocs.map(d => `"${d.type}"`).join(", ") + " will be removed."}
+                              </span>
+                            </div>
+                          </div>
+                        </div>
+
+                        {/* Footer */}
+                        <div
+                          className="flex items-center justify-end gap-2 px-4 py-3"
+                          style={{ borderTop: "1px solid #3A3A3C" }}
+                        >
+                          <button
+                            onClick={() => setShowClearConfirm(false)}
+                            className="flex items-center justify-center h-8 px-4 rounded-[8px] focus:outline-none transition-colors hover:border-[#6E6E70]"
+                            style={{ border: "1px solid #3A3A3C", color: "#6E6E70", fontFamily: "'Inter', sans-serif", fontSize: 12, fontWeight: 500 }}
+                          >
+                            Cancel
+                          </button>
+                          <button
+                            onClick={handleClearTemporary}
+                            className="flex items-center justify-center h-8 px-4 rounded-[8px] focus:outline-none transition-colors hover:opacity-90"
+                            style={{ background: "#D94A4A", color: "#FFFFFF", fontFamily: "'Inter', sans-serif", fontSize: 12, fontWeight: 600 }}
+                          >
+                            Remove all
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })()}
               </>
             )}
           </div>
