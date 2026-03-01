@@ -95,8 +95,8 @@ function createWindow() {
         ...details.responseHeaders,
         "Content-Security-Policy": [
           !app.isPackaged
-            ? "default-src 'self' 'unsafe-inline' data:; script-src 'self' 'unsafe-eval' 'unsafe-inline' data:; connect-src 'self' http://localhost:* ws://localhost:*; style-src 'self' 'unsafe-inline';"
-            : "default-src 'self' 'unsafe-inline' data:; script-src 'self' 'unsafe-inline' data:; style-src 'self' 'unsafe-inline';",
+            ? "default-src 'self' 'unsafe-inline' data:; script-src 'self' 'unsafe-eval' 'unsafe-inline' data:; connect-src 'self' http://localhost:* ws://localhost:*; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com data:;"
+            : "default-src 'self' 'unsafe-inline' data:; script-src 'self' 'unsafe-inline' data:; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com data:;",
         ],
       },
     });
@@ -497,6 +497,13 @@ ipcMain.on("hide-window", (_event) => {
   console.log("[IPC] Received hide-window request");
   if (mainWindow) {
     mainWindow.hide();
+  }
+});
+
+ipcMain.on("resize-window", (_event, { width, height }: { width: number; height: number }) => {
+  if (mainWindow) {
+    mainWindow.setSize(width, height, true);
+    mainWindow.center();
   }
 });
 
