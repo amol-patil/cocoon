@@ -282,8 +282,8 @@ export default function SettingsView({ onBack }: SettingsViewProps) {
         </div>
         <button
           onClick={onBack}
-          className="flex items-center justify-center focus:outline-none transition-colors hover:border-[#6E6E70]"
-          style={{ width: 32, height: 32, borderRadius: 16, border: "1px solid #3A3A3C", color: "#6E6E70" }}
+          className="flex items-center justify-center focus:outline-none transition-colors border border-[#3A3A3C] hover:bg-[#2A2A2C] hover:border-[#9A9A9E]"
+          style={{ width: 32, height: 32, borderRadius: 16, color: "#6E6E70" }}
           aria-label="Close settings"
         >
           <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
@@ -423,8 +423,8 @@ export default function SettingsView({ onBack }: SettingsViewProps) {
             <button
               onClick={handleExport}
               disabled={isSaving}
-              className="flex items-center justify-center gap-2 h-[38px] px-[18px] rounded-[10px] focus:outline-none transition-colors hover:border-[#6E6E70] disabled:opacity-50"
-              style={{ background: "#242426", border: "1px solid #3A3A3C" }}
+              className="flex items-center justify-center gap-2 h-[38px] px-[18px] rounded-[10px] focus:outline-none transition-colors border border-[#3A3A3C] hover:bg-[#2A2A2C] hover:border-[#C9A962] disabled:opacity-50"
+              style={{ background: "#242426" }}
             >
               <svg width="14" height="14" viewBox="0 0 14 14" fill="none" style={{ color: "#C9A962", flexShrink: 0 }}>
                 <path d="M7 9V1M4 6l3 3 3-3" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round" />
@@ -435,14 +435,14 @@ export default function SettingsView({ onBack }: SettingsViewProps) {
             <button
               onClick={() => { setShowImportConfirm(v => !v); }}
               disabled={isSaving}
-              className="flex items-center justify-center gap-2 h-[38px] px-[18px] rounded-[10px] focus:outline-none transition-colors hover:border-[#6E6E70] disabled:opacity-50"
-              style={{ background: "#242426", border: "1px solid #3A3A3C" }}
+              className="group flex items-center justify-center gap-2 h-[38px] px-[18px] rounded-[10px] focus:outline-none transition-colors border border-[#3A3A3C] hover:bg-[#2A2A2C] disabled:opacity-50"
+              style={{ background: "#242426" }}
             >
-              <svg width="14" height="14" viewBox="0 0 14 14" fill="none" style={{ color: "#9A9A9E", flexShrink: 0 }}>
+              <svg width="14" height="14" viewBox="0 0 14 14" fill="none" className="text-[#9A9A9E] group-hover:text-[#F5F5F0] transition-colors" style={{ flexShrink: 0 }}>
                 <path d="M7 1v8M4 4l3-3 3 3" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round" />
                 <path d="M2 10v1.5A1.5 1.5 0 0 0 3.5 13h7a1.5 1.5 0 0 0 1.5-1.5V10" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" />
               </svg>
-              <span style={{ color: "#9A9A9E", fontFamily: "'Inter', sans-serif", fontSize: 13, fontWeight: 500 }}>
+              <span className="text-[#9A9A9E] group-hover:text-[#F5F5F0] transition-colors" style={{ fontFamily: "'Inter', sans-serif", fontSize: 13, fontWeight: 500 }}>
                 Import Backup
               </span>
             </button>
@@ -493,8 +493,8 @@ export default function SettingsView({ onBack }: SettingsViewProps) {
             <button
               onClick={() => setShowClearAllConfirm(v => !v)}
               disabled={isSaving}
-              className="flex items-center justify-center gap-1.5 h-[34px] px-3.5 rounded-[8px] flex-shrink-0 focus:outline-none transition-colors disabled:opacity-50"
-              style={{ border: "1px solid #D94A4A44", color: "#D94A4A" }}
+              className="flex items-center justify-center gap-1.5 h-[34px] px-3.5 rounded-[8px] flex-shrink-0 focus:outline-none transition-colors border border-[#D94A4A44] hover:bg-[#2A1A1A] hover:border-[#D94A4A88] disabled:opacity-50"
+              style={{ color: "#D94A4A" }}
             >
               <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
                 <path d="M2 3h8M4 3V2h4v1M3 3l.5 7h5L9 3" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round" />
@@ -550,16 +550,16 @@ export default function SettingsView({ onBack }: SettingsViewProps) {
         <div className="flex gap-2">
           <button
             onClick={onBack}
-            className="flex items-center justify-center h-9 px-5 rounded-[10px] focus:outline-none transition-colors hover:border-[#6E6E70]"
-            style={{ border: "1px solid #3A3A3C", color: "#6E6E70", fontFamily: "'Inter', sans-serif", fontSize: 13, fontWeight: 500 }}
+            className="flex items-center justify-center h-9 px-5 rounded-[10px] focus:outline-none transition-colors border border-[#3A3A3C] hover:bg-[#2A2A2C] hover:border-[#9A9A9E] hover:text-[#F5F5F0]"
+            style={{ color: "#6E6E70", fontFamily: "'Inter', sans-serif", fontSize: 13, fontWeight: 500 }}
           >
             Cancel
           </button>
           <button
             onClick={handleSave}
             disabled={isSaving}
-            className="flex items-center justify-center h-9 px-5 rounded-[10px] focus:outline-none transition-colors hover:opacity-90 disabled:opacity-50"
-            style={{ background: "#C9A962", color: "#1A1A1C", fontFamily: "'Inter', sans-serif", fontSize: 13, fontWeight: 600 }}
+            className="flex items-center justify-center h-9 px-5 rounded-[10px] focus:outline-none transition-colors bg-[#C9A962] hover:bg-[#D4B870] disabled:opacity-50"
+            style={{ color: "#1A1A1C", fontFamily: "'Inter', sans-serif", fontSize: 13, fontWeight: 600 }}
           >
             {isSaving ? "Saving..." : "Save Settings"}
           </button>
