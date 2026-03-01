@@ -186,8 +186,11 @@ interface DocumentFormProps {
   onCancel: () => void;
   onDelete?: (id: string) => void;
   onEscape: () => void;
-  availableCategories: string[];
   availableOwners: string[];
+  availableCategories: string[];
+  onRenameOwner: (oldName: string, newName: string) => void;
+  onDeleteOwner: (name: string) => void;
+  onCreateOwner: (name: string) => void;
   onRenameCategory: (oldName: string, newName: string) => void;
   onDeleteCategory: (name: string) => void;
   onCreateCategory: (name: string) => void;
@@ -199,7 +202,11 @@ function DocumentForm({
   onCancel,
   onDelete,
   onEscape,
+  availableOwners,
   availableCategories,
+  onRenameOwner,
+  onDeleteOwner,
+  onCreateOwner,
   onRenameCategory,
   onDeleteCategory,
   onCreateCategory,
@@ -211,13 +218,18 @@ function DocumentForm({
   const [fileLink, setFileLink] = useState("");
   const [fields, setFields] = useState<{ key: string; value: string }[]>([{ key: "", value: "" }]);
   const [isTemporary, setIsTemporary] = useState(false);
+  const [isDefaultOpen, setIsDefaultOpen] = useState(false);
+  const [isOwnerOpen, setIsOwnerOpen] = useState(false);
+  const [ownerSearch, setOwnerSearch] = useState("");
+  const [editingOwner, setEditingOwner] = useState<string | null>(null);
+  const [editingOwnerValue, setEditingOwnerValue] = useState("");
   const [isCatOpen, setIsCatOpen] = useState(false);
   const [catSearch, setCatSearch] = useState("");
-  const [isDefaultOpen, setIsDefaultOpen] = useState(false);
   const [editingCat, setEditingCat] = useState<string | null>(null);
   const [editingCatValue, setEditingCatValue] = useState("");
-  const catRef = useRef<HTMLDivElement>(null);
   const defaultRef = useRef<HTMLDivElement>(null);
+  const ownerRef = useRef<HTMLDivElement>(null);
+  const catRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     if (documentToEdit) {
@@ -239,12 +251,41 @@ function DocumentForm({
   // Close dropdowns on outside click
   useEffect(() => {
     const handler = (e: MouseEvent) => {
-      if (catRef.current && !catRef.current.contains(e.target as Node)) setIsCatOpen(false);
       if (defaultRef.current && !defaultRef.current.contains(e.target as Node)) setIsDefaultOpen(false);
+      if (ownerRef.current && !ownerRef.current.contains(e.target as Node)) setIsOwnerOpen(false);
+      if (catRef.current && !catRef.current.contains(e.target as Node)) setIsCatOpen(false);
     };
     document.addEventListener("mousedown", handler);
     return () => document.removeEventListener("mousedown", handler);
   }, []);
+
+  const filteredOwners = availableOwners.filter(o =>
+    o.toLowerCase().includes(ownerSearch.toLowerCase())
+  );
+  const trimmedOwnerSearch = ownerSearch.trim();
+  const showCreateOwner = trimmedOwnerSearch && !availableOwners.some(o => o.toLowerCase() === trimmedOwnerSearch.toLowerCase());
+
+  const selectOrCreateOwner = (name: string) => {
+    const isNew = !availableOwners.some(o => o.toLowerCase() === name.toLowerCase());
+    setOwner(name);
+    if (isNew) onCreateOwner(name);
+    setIsOwnerOpen(false);
+    setOwnerSearch("");
+  };
+
+  const filteredCats = availableCategories.filter(c =>
+    c.toLowerCase().includes(catSearch.toLowerCase())
+  );
+  const trimmedSearch = catSearch.trim();
+  const showCreate = trimmedSearch && !availableCategories.some(c => c.toLowerCase() === trimmedSearch.toLowerCase());
+
+  const selectOrCreateCategory = (name: string) => {
+    const isNew = !availableCategories.some(c => c.toLowerCase() === name.toLowerCase());
+    setCategory(name);
+    if (isNew) onCreateCategory(name);
+    setIsCatOpen(false);
+    setCatSearch("");
+  };
 
   const handleFieldChange = (index: number, field: "key" | "value", value: string) => {
     const next = [...fields];
@@ -283,19 +324,6 @@ function DocumentForm({
     if (e.key === "Escape") { e.preventDefault(); onEscape(); }
   };
 
-  const filteredCats = availableCategories.filter(c =>
-    c.toLowerCase().includes(catSearch.toLowerCase())
-  );
-  const trimmedSearch = catSearch.trim();
-  const showCreate = trimmedSearch && !availableCategories.some(c => c.toLowerCase() === trimmedSearch.toLowerCase());
-
-  const selectOrCreateCategory = (name: string) => {
-    const isNew = !availableCategories.some(c => c.toLowerCase() === name.toLowerCase());
-    setCategory(name);
-    if (isNew) onCreateCategory(name);
-    setIsCatOpen(false);
-    setCatSearch("");
-  };
   const namedFields = fields.filter(f => f.key.trim());
 
   const inputStyle: React.CSSProperties = {
@@ -381,15 +409,146 @@ function DocumentForm({
             />
           </div>
 
-          {/* Owner */}
-          <div className="flex flex-col gap-1.5">
+          {/* Owner — custom dropdown */}
+          <div className="flex flex-col gap-1.5 relative" ref={ownerRef}>
             <label style={labelStyle}>Owner</label>
-            <input
-              style={inputStyle}
-              value={owner}
-              onChange={e => setOwner(e.target.value)}
-              placeholder="e.g. Jayanti"
-            />
+            <button
+              type="button"
+              onClick={() => { setIsOwnerOpen(o => !o); setOwnerSearch(""); }}
+              className="flex items-center justify-between h-10 px-[14px] rounded-[10px] text-left focus:outline-none"
+              style={{
+                background: "#242426",
+                border: `1px solid ${isOwnerOpen ? "#C9A962" : "#3A3A3C"}`,
+                color: owner ? "#F5F5F0" : "#4A4A4C",
+                fontFamily: "'Inter', sans-serif", fontSize: 13,
+              }}
+            >
+              <span className="flex items-center gap-2">
+                {owner && (
+                  <span className="w-2 h-2 rounded-full shrink-0" style={{ background: getCategoryColorHex(owner) }} />
+                )}
+                {owner || "Select or create…"}
+              </span>
+              <svg width="14" height="14" viewBox="0 0 14 14" fill="none" style={{ color: "#6E6E70" }}>
+                <path d="M3 5l4 4 4-4" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round"/>
+              </svg>
+            </button>
+            {isOwnerOpen && (
+              <div
+                className="absolute left-0 right-0 z-50 overflow-hidden"
+                style={{ top: "calc(100% + 4px)", background: "#2A2A2C", border: "1px solid #3A3A3C", borderRadius: 10 }}
+              >
+                <div className="px-3 py-2" style={{ borderBottom: "1px solid #3A3A3C" }}>
+                  <input
+                    style={{ ...inputStyle, height: 32, background: "transparent", border: "none", fontSize: 12, padding: "0 4px" }}
+                    placeholder="Search or create…"
+                    value={ownerSearch}
+                    onChange={e => setOwnerSearch(e.target.value)}
+                    onClick={e => e.stopPropagation()}
+                    onKeyDown={e => {
+                      if (e.key === "Enter") {
+                        e.preventDefault();
+                        if (showCreateOwner) selectOrCreateOwner(trimmedOwnerSearch);
+                        else if (filteredOwners.length === 1) selectOrCreateOwner(filteredOwners[0]);
+                      } else if (e.key === "Escape") {
+                        e.preventDefault();
+                        setIsOwnerOpen(false);
+                      }
+                    }}
+                    autoFocus
+                  />
+                </div>
+                {filteredOwners.map(o => (
+                  <div
+                    key={o}
+                    className="group flex items-center justify-between w-full h-9 px-3.5"
+                    style={{ background: o === owner ? "#C9A96214" : "transparent" }}
+                  >
+                    {editingOwner === o ? (
+                      <input
+                        className="flex-1 focus:outline-none bg-transparent"
+                        style={{ color: "#F5F5F0", fontFamily: "'Inter', sans-serif", fontSize: 13 }}
+                        value={editingOwnerValue}
+                        autoFocus
+                        onChange={e => setEditingOwnerValue(e.target.value)}
+                        onKeyDown={e => {
+                          if (e.key === "Enter") {
+                            e.preventDefault();
+                            const trimmed = editingOwnerValue.trim();
+                            if (trimmed && trimmed !== o) {
+                              onRenameOwner(o, trimmed);
+                              if (owner === o) setOwner(trimmed);
+                            }
+                            setEditingOwner(null);
+                          } else if (e.key === "Escape") {
+                            e.preventDefault();
+                            setEditingOwner(null);
+                          }
+                        }}
+                        onBlur={() => {
+                          const trimmed = editingOwnerValue.trim();
+                          if (trimmed && trimmed !== o) {
+                            onRenameOwner(o, trimmed);
+                            if (owner === o) setOwner(trimmed);
+                          }
+                          setEditingOwner(null);
+                        }}
+                        onClick={e => e.stopPropagation()}
+                      />
+                    ) : (
+                      <button
+                        type="button"
+                        className="flex items-center gap-2.5 flex-1 text-left focus:outline-none overflow-hidden min-w-0"
+                        style={{ color: "#F5F5F0", fontFamily: "'Inter', sans-serif", fontSize: 13 }}
+                        onClick={() => selectOrCreateOwner(o)}
+                      >
+                        <span className="w-2 h-2 rounded-full shrink-0" style={{ background: getCategoryColorHex(o) }} />
+                        <span className="truncate">{o}</span>
+                      </button>
+                    )}
+                    {editingOwner !== o && (
+                      <div className="flex items-center gap-1.5 opacity-0 group-hover:opacity-100 transition-opacity shrink-0 ml-2">
+                        <button
+                          type="button"
+                          className="focus:outline-none"
+                          style={{ color: "#6E6E70", lineHeight: 0 }}
+                          onClick={e => { e.stopPropagation(); setEditingOwner(o); setEditingOwnerValue(o); }}
+                          title="Rename"
+                        >
+                          <svg width="11" height="11" viewBox="0 0 11 11" fill="none">
+                            <path d="M7.5 1.5a1 1 0 0 1 1.414 1.414L3.5 8.328 1.5 9l.672-2L7.5 1.5z" stroke="currentColor" strokeWidth="1.1" strokeLinecap="round" strokeLinejoin="round"/>
+                          </svg>
+                        </button>
+                        <button
+                          type="button"
+                          className="focus:outline-none"
+                          style={{ color: "#D94A4A", lineHeight: 0 }}
+                          onClick={e => { e.stopPropagation(); onDeleteOwner(o); if (owner === o) setOwner(""); }}
+                          title="Delete"
+                        >
+                          <svg width="11" height="11" viewBox="0 0 11 11" fill="none">
+                            <path d="M2 3h7M4.5 3V2h2v1M3.5 3l.4 6h3.2l.4-6" stroke="currentColor" strokeWidth="1.1" strokeLinecap="round" strokeLinejoin="round"/>
+                          </svg>
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                ))}
+                {showCreateOwner && (
+                  <button
+                    type="button"
+                    className="flex items-center gap-2 w-full h-9 px-3.5 text-left focus:outline-none"
+                    style={{ borderTop: "1px solid #3A3A3C", color: "#C9A962", fontFamily: "'Inter', sans-serif", fontSize: 13 }}
+                    onClick={() => selectOrCreateOwner(trimmedOwnerSearch)}
+                  >
+                    <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
+                      <path d="M6 1v10M1 6h10" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round"/>
+                    </svg>
+                    Create "{ownerSearch.trim()}"
+                  </button>
+                )}
+              </div>
+            )}
           </div>
 
           {/* Category — custom dropdown */}
@@ -416,13 +575,11 @@ function DocumentForm({
                 <path d="M3 5l4 4 4-4" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round"/>
               </svg>
             </button>
-
             {isCatOpen && (
               <div
                 className="absolute left-0 right-0 z-50 overflow-hidden"
                 style={{ top: "calc(100% + 4px)", background: "#2A2A2C", border: "1px solid #3A3A3C", borderRadius: 10 }}
               >
-                {/* Search */}
                 <div className="px-3 py-2" style={{ borderBottom: "1px solid #3A3A3C" }}>
                   <input
                     style={{ ...inputStyle, height: 32, background: "transparent", border: "none", fontSize: 12, padding: "0 4px" }}
@@ -449,7 +606,6 @@ function DocumentForm({
                     className="group flex items-center justify-between w-full h-9 px-3.5"
                     style={{ background: cat === category ? "#C9A96214" : "transparent" }}
                   >
-                    {/* Left: dot + name (or rename input) */}
                     {editingCat === cat ? (
                       <input
                         className="flex-1 focus:outline-none bg-transparent"
@@ -492,8 +648,6 @@ function DocumentForm({
                         <span className="truncate">{cat}</span>
                       </button>
                     )}
-
-                    {/* Right: pencil + trash — hidden until hover */}
                     {editingCat !== cat && (
                       <div className="flex items-center gap-1.5 opacity-0 group-hover:opacity-100 transition-opacity shrink-0 ml-2">
                         <button
@@ -710,7 +864,7 @@ type AppViewMode = "search" | "editForm" | "settings";
 export default function App() {
   // === State ===
   const [allDocuments, setAllDocuments] = useState<Document[]>([]);
-  const [appSettings, setAppSettings] = useState<{ owners: string[]; categories: string[]; clipboardAutoClearSeconds: number }>({ owners: [], categories: [], clipboardAutoClearSeconds: 30 });
+  const [appSettings, setAppSettings] = useState<{ clipboardAutoClearSeconds: number }>({ clipboardAutoClearSeconds: 30 });
   const clearTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [isLoading, setIsLoading] = useState(true); // Loading state
   const [error, setError] = useState<string | null>(null); // Error state
@@ -750,9 +904,9 @@ export default function App() {
       .finally(() => {
         setIsLoading(false);
       });
-    // Also load settings for owners/categories
+    // Also load settings
     window.ipc.invoke("get-settings").then((settings: any) => {
-      setAppSettings({ owners: settings.owners || [], categories: settings.categories || [], clipboardAutoClearSeconds: settings.clipboardAutoClearSeconds ?? 30 });
+      setAppSettings({ clipboardAutoClearSeconds: settings.clipboardAutoClearSeconds ?? 30 });
     }).catch((err: Error) => {
       console.error("Error loading settings:", err);
     });
@@ -902,34 +1056,54 @@ export default function App() {
 
   const handleRenameCategory = useCallback(
     async (oldName: string, newName: string) => {
-      // Update all documents that use this category
       const updatedDocs = allDocuments.map(doc =>
         doc.category === oldName ? { ...doc, category: newName } : doc
       );
       setAllDocuments(updatedDocs);
       await saveDocumentsIPC(updatedDocs);
-      // Update settings categories list
-      const updatedSettings = {
-        ...appSettings,
-        categories: appSettings.categories.map(c => c === oldName ? newName : c),
-      };
-      setAppSettings(updatedSettings);
-      await window.ipc.invoke("save-settings", updatedSettings);
     },
-    [allDocuments, appSettings, saveDocumentsIPC],
+    [allDocuments, saveDocumentsIPC],
   );
 
-  const handleCreateCategory = useCallback(
+  const handleCreateCategory = useCallback((_name: string) => {
+    // Categories are created inline on documents; nothing extra to persist here
+  }, []);
+
+  const handleDeleteCategory = useCallback(
     async (name: string) => {
-      if (appSettings.categories.includes(name)) return;
-      const updatedSettings = {
-        ...appSettings,
-        categories: [...appSettings.categories, name],
-      };
-      setAppSettings(updatedSettings);
-      await window.ipc.invoke("save-settings", updatedSettings);
+      const updatedDocs = allDocuments.map(doc =>
+        doc.category === name ? { ...doc, category: undefined } : doc
+      );
+      setAllDocuments(updatedDocs);
+      await saveDocumentsIPC(updatedDocs);
     },
-    [appSettings],
+    [allDocuments, saveDocumentsIPC],
+  );
+
+  const handleRenameOwner = useCallback(
+    async (oldName: string, newName: string) => {
+      const updatedDocs = allDocuments.map(doc =>
+        doc.owner === oldName ? { ...doc, owner: newName } : doc
+      );
+      setAllDocuments(updatedDocs);
+      await saveDocumentsIPC(updatedDocs);
+    },
+    [allDocuments, saveDocumentsIPC],
+  );
+
+  const handleCreateOwner = useCallback((_name: string) => {
+    // Owners are created inline on documents; nothing extra to persist here
+  }, []);
+
+  const handleDeleteOwner = useCallback(
+    async (name: string) => {
+      const updatedDocs = allDocuments.map(doc =>
+        doc.owner === name ? { ...doc, owner: undefined } : doc
+      );
+      setAllDocuments(updatedDocs);
+      await saveDocumentsIPC(updatedDocs);
+    },
+    [allDocuments, saveDocumentsIPC],
   );
 
   const handleClearTemporary = useCallback(async () => {
@@ -938,25 +1112,6 @@ export default function App() {
     setShowClearConfirm(false);
     await saveDocumentsIPC(updatedDocs);
   }, [allDocuments, saveDocumentsIPC]);
-
-  const handleDeleteCategory = useCallback(
-    async (name: string) => {
-      // Remove category from all documents that use it
-      const updatedDocs = allDocuments.map(doc =>
-        doc.category === name ? { ...doc, category: undefined } : doc
-      );
-      setAllDocuments(updatedDocs);
-      await saveDocumentsIPC(updatedDocs);
-      // Remove from settings categories list
-      const updatedSettings = {
-        ...appSettings,
-        categories: appSettings.categories.filter(c => c !== name),
-      };
-      setAppSettings(updatedSettings);
-      await window.ipc.invoke("save-settings", updatedSettings);
-    },
-    [allDocuments, appSettings, saveDocumentsIPC],
-  );
 
   const handleSaveDocument = useCallback(
     async (docData: Omit<Document, "id"> & { id?: string }) => {
@@ -987,8 +1142,8 @@ export default function App() {
             defaultField: docData.defaultField,
             fields: docData.fields || {},
             owner: docData.owner || undefined,
+            category: docData.category || undefined,
             fileLink: docData.fileLink || "",
-            // Use isTemporary directly from docData, which form defaults to false if needed
             isTemporary: docData.isTemporary || false,
           };
           updatedDocs = [...allDocuments, newDoc];
@@ -1167,6 +1322,8 @@ export default function App() {
   useEffect(() => {
     if (viewMode === "editForm") {
       window.ipc.send("resize-window", { width: 760, height: 560 });
+    } else if (viewMode === "settings") {
+      window.ipc.send("resize-window", { width: 760, height: 620 });
     } else {
       window.ipc.send("resize-window", { width: 760, height: 480 });
     }
@@ -1213,8 +1370,11 @@ export default function App() {
             onCancel={handleCancelEdit}
             onDelete={handleDeleteDocument}
             onEscape={hideWindow}
-            availableCategories={[...new Set([...appSettings.categories, ...allDocuments.map(d => d.category).filter(Boolean) as string[]])]}
-            availableOwners={[...new Set([...appSettings.owners, ...allDocuments.map(d => d.owner).filter(Boolean) as string[]])]}
+            availableOwners={[...new Set(allDocuments.map(d => d.owner).filter(Boolean) as string[])]}
+            availableCategories={uniqueCategories}
+            onRenameOwner={handleRenameOwner}
+            onDeleteOwner={handleDeleteOwner}
+            onCreateOwner={handleCreateOwner}
             onRenameCategory={handleRenameCategory}
             onDeleteCategory={handleDeleteCategory}
             onCreateCategory={handleCreateCategory}
