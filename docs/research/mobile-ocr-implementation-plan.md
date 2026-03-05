@@ -40,16 +40,30 @@ Add the ability to scan documents (driver's licenses, passports, health cards) a
 
 **Goal:** Host model for on-demand download
 
-**Options:**
-- GitHub Releases (simple, free)
-- CloudFlare R2 (fast CDN, cheap)
-- Self-hosted (control, cost)
+**Recommended: GitHub Releases** (start here)
+
+| Option | Cost | Pros | Cons |
+|--------|------|------|------|
+| **GitHub Releases** | Free | Simple, 2GB limit, CDN-backed, version with app | No download analytics |
+| CloudFlare R2 | ~$0.015/GB | Fast global CDN, S3-compatible | Setup overhead |
+| HuggingFace Hub | Free | Already hosts Moondream | Need to upload Core ML version |
+| Apple On-Demand Resources | Free | Integrated with App Store, device targeting | App Store only, complex setup |
+
+**URL Pattern:**
+```
+https://github.com/amol-patil/cocoon/releases/download/v{VERSION}/moondream-{SIZE}.mlpackage.zip
+```
+
+Example:
+- `https://github.com/amol-patil/cocoon/releases/download/v1.0/moondream-0.5b.mlpackage.zip`
+- `https://github.com/amol-patil/cocoon/releases/download/v1.0/moondream-2b.mlpackage.zip`
 
 **Tasks:**
-- [ ] Choose hosting solution
-- [ ] Upload converted model
-- [ ] Implement download progress UI
-- [ ] Add model versioning strategy
+- [ ] Convert model and create `.mlpackage.zip`
+- [ ] Create GitHub Release with model assets
+- [ ] Document model versions in release notes
+- [ ] Implement download progress UI in app
+- [ ] Add checksum verification for integrity
 
 ---
 
@@ -61,21 +75,59 @@ Add the ability to scan documents (driver's licenses, passports, health cards) a
 
 ```swift
 class MoondreamModelManager {
-    enum ModelTier { case compact, enhanced }
+    enum ModelTier: String { 
+        case compact = "0.5b"   // ~500MB
+        case enhanced = "2b"    // ~1.2GB
+    }
     
-    func downloadModel(_ tier: ModelTier) async throws
-    func isModelAvailable(_ tier: ModelTier) -> Bool
-    func loadModel(_ tier: ModelTier) async throws -> MoondreamModel
-    func unloadModel()
+    // Model URLs (GitHub Releases)
+    private func modelURL(for tier: ModelTier) -> URL {
+        let version = "v1.0"
+        return URL(string: "https://github.com/amol-patil/cocoon/releases/download/\(version)/moondream-\(tier.rawValue).mlpackage.zip")!
+    }
+    
+    // Download with progress
+    func downloadModel(_ tier: ModelTier, progress: @escaping (Double) -> Void) async throws {
+        let (localURL, _) = try await URLSession.shared.download(from: modelURL(for: tier))
+        // Unzip to Documents/Models/
+        try FileManager.default.unzipItem(at: localURL, to: modelsDirectory)
+    }
+    
+    // Check if already downloaded
+    func isModelAvailable(_ tier: ModelTier) -> Bool {
+        return FileManager.default.fileExists(atPath: modelPath(for: tier))
+    }
+    
+    // Load into memory
+    func loadModel(_ tier: ModelTier) async throws -> MoondreamModel {
+        let config = MLModelConfiguration()
+        config.computeUnits = .cpuAndNeuralEngine  // Use Neural Engine when available
+        return try MoondreamModel(contentsOf: modelPath(for: tier), configuration: config)
+    }
+    
+    // Free memory
+    func unloadModel() {
+        currentModel = nil
+    }
 }
 ```
 
+**Storage Location:**
+```
+~/Library/Application Support/Cocoon/Models/
+├── moondream-0.5b.mlpackage/
+└── moondream-2b.mlpackage/     (optional)
+```
+
 **Tasks:**
-- [ ] Implement download with progress
-- [ ] Store in app's Documents directory
-- [ ] Handle background download
-- [ ] Implement model loading/unloading
-- [ ] Add device capability check (RAM requirements)
+- [ ] Implement download with progress callback
+- [ ] Show progress bar UI during download
+- [ ] Store in app's Application Support directory
+- [ ] Handle background download (iOS)
+- [ ] Implement model loading with Neural Engine preference
+- [ ] Add device capability check (check available RAM)
+- [ ] Handle download resume on network failure
+- [ ] Verify checksum after download
 
 ### 2.2 Inference Wrapper
 
