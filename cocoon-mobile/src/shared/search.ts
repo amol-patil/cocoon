@@ -1,5 +1,10 @@
-import Fuse, { type IFuseOptions } from 'fuse.js';
+import Fuse, { type IFuseOptions, type FuseResultMatch } from 'fuse.js';
 import { CocoonDocument } from './types';
+
+export interface SearchResult {
+  item: CocoonDocument;
+  matches?: readonly FuseResultMatch[];
+}
 
 // Fuse.js config — mirrors desktop fuseOptions exactly
 export const fuseOptions: IFuseOptions<CocoonDocument> = {
@@ -53,8 +58,8 @@ export function parseQuery(raw: string): ParsedQuery {
 export function searchDocuments(
   documents: CocoonDocument[],
   rawQuery: string,
-  categoryTab?: string // active category filter chip
-): CocoonDocument[] {
+  categoryTab?: string
+): SearchResult[] {
   const { ownerFilter, categoryFilter, textQuery } = parseQuery(rawQuery);
 
   let filtered = documents;
@@ -82,9 +87,12 @@ export function searchDocuments(
 
   // Apply text search via Fuse.js
   if (textQuery) {
-    const fuse = new Fuse(filtered, fuseOptions);
-    return fuse.search(textQuery).map((r) => r.item);
+    const fuse = new Fuse(filtered, { ...fuseOptions, includeMatches: true });
+    return fuse.search(textQuery).map((r) => ({
+      item: r.item,
+      matches: r.matches,
+    }));
   }
 
-  return filtered;
+  return filtered.map((item) => ({ item }));
 }

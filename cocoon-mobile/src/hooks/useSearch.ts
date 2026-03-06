@@ -1,13 +1,13 @@
 import { useState, useMemo } from 'react';
 import { CocoonDocument } from '../shared/types';
-import { searchDocuments } from '../shared/search';
+import { searchDocuments, SearchResult } from '../shared/search';
 
 export function useSearch(documents: CocoonDocument[]) {
   const [query, setQuery] = useState('');
   const [categoryTab, setCategoryTab] = useState('All');
 
-  const results = useMemo(() => {
-    if (!query && categoryTab === 'All') return documents;
+  const results: SearchResult[] = useMemo(() => {
+    if (!query && categoryTab === 'All') return documents.map((item) => ({ item }));
     return searchDocuments(documents, query, categoryTab);
   }, [documents, query, categoryTab]);
 

@@ -75,9 +75,13 @@ export default function SearchTab() {
       ) : (
         <FlatList
           data={results}
-          keyExtractor={(d) => d.id}
-          renderItem={({ item }) => (
-            <DocumentCard doc={item} onPress={() => router.push(`/document/${item.id}`)} />
+          keyExtractor={(r) => r.item.id}
+          renderItem={({ item: result }) => (
+            <DocumentCard
+              doc={result.item}
+              matches={result.matches}
+              onPress={() => router.push(`/document/${result.item.id}`)}
+            />
           )}
           contentContainerStyle={styles.list}
           ItemSeparatorComponent={() => <View style={{ height: 16 }} />}

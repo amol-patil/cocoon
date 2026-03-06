@@ -1,17 +1,20 @@
 import React from 'react';
 import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
 import { Feather } from '@expo/vector-icons';
+import { type FuseResultMatch } from 'fuse.js';
 import { CocoonDocument } from '../shared/types';
 import { resolveTagColor } from '../shared/colors';
 import { colors, typography } from '../theme/colors';
 import { useSettings } from '../hooks/useSettings';
+import { HighlightedText } from './HighlightedText';
 
 interface Props {
   doc: CocoonDocument;
   onPress: () => void;
+  matches?: readonly FuseResultMatch[];
 }
 
-export function DocumentCard({ doc, onPress }: Props) {
+export function DocumentCard({ doc, onPress, matches }: Props) {
   const { settings } = useSettings();
   const categoryLabel = doc.category || doc.type;
   const categoryColor = resolveTagColor(categoryLabel, settings.categories);
@@ -21,13 +24,30 @@ export function DocumentCard({ doc, onPress }: Props) {
     <TouchableOpacity style={styles.card} onPress={onPress} activeOpacity={0.7}>
       <View style={[styles.accent, { backgroundColor: accentColor }]} />
       <View style={styles.content}>
-        <Text style={styles.title} numberOfLines={1}>{doc.type}</Text>
+        <HighlightedText
+          text={doc.type}
+          matches={matches}
+          fieldKey="type"
+          style={styles.title}
+          numberOfLines={1}
+        />
         <View style={styles.metaRow}>
-          <Text style={[styles.metaCategory, { color: categoryColor }]}>{categoryLabel}</Text>
+          <HighlightedText
+            text={categoryLabel}
+            matches={matches}
+            fieldKey="category"
+            style={[styles.metaCategory, { color: categoryColor }]}
+            highlightColor={colors.accentPrimary}
+          />
           {doc.owner ? (
             <>
               <Text style={styles.metaDot}>·</Text>
-              <Text style={styles.metaOwner}>{doc.owner}</Text>
+              <HighlightedText
+                text={doc.owner}
+                matches={matches}
+                fieldKey="owner"
+                style={styles.metaOwner}
+              />
             </>
           ) : null}
         </View>
