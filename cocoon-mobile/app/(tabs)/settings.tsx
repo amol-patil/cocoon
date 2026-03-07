@@ -9,7 +9,7 @@ import { BlurView } from 'expo-blur';
 import { GlowBackground } from '../../src/components/GlowBackground';
 import { useSettings } from '../../src/hooks/useSettings';
 import { useDocuments } from '../../src/hooks/useDocuments';
-import { exportDocuments, importDocuments } from '../../src/services/exportImportService';
+import { exportDocuments, pickImportFile, decryptAndImportFile, PickedFile } from '../../src/services/exportImportService';
 import { colors } from '../../src/theme/colors';
 import { useKeyboardHeight } from '../../src/hooks/useKeyboardHeight';
 
@@ -46,6 +46,7 @@ function ExportModal({
   function handleConfirm() {
     if (!password) { Alert.alert('Password required'); return; }
     if (password.length < 8) { Alert.alert('Password too short', 'Minimum 8 characters.'); return; }
+    if (password !== confirm) { Alert.alert('Passwords don\'t match', 'Please re-enter your password.'); return; }
     onConfirm(password);
     setPassword('');
     setConfirm('');
@@ -100,8 +101,8 @@ function ExportModal({
 }
 
 function ImportPasswordModal({
-  visible, onConfirm, onCancel,
-}: { visible: boolean; onConfirm: (pw: string) => void; onCancel: () => void; }) {
+  visible, fileName, onConfirm, onCancel,
+}: { visible: boolean; fileName?: string; onConfirm: (pw: string) => void; onCancel: () => void; }) {
   const [password, setPassword] = useState('');
   const keyboardHeight = useKeyboardHeight();
 
@@ -114,6 +115,7 @@ function ImportPasswordModal({
             <Feather name="download" size={22} color={colors.accentPrimary} />
           </View>
           <Text style={styles.modalTitle}>Import Data</Text>
+          {fileName ? <Text style={styles.modalSubtitle}>File: {fileName}</Text> : null}
           <Text style={styles.modalSubtitle}>Enter the password used when this backup was created.</Text>
           <Text style={styles.inputLabel}>PASSWORD</Text>
           <TextInput
@@ -207,6 +209,7 @@ export default function SettingsTab() {
   const { documents, replaceAll } = useDocuments();
   const [showExportModal, setShowExportModal] = useState(false);
   const [showImportModal, setShowImportModal] = useState(false);
+  const [pickedFile, setPickedFile] = useState<PickedFile | null>(null);
   const [isExporting, setIsExporting] = useState(false);
   const [isImporting, setIsImporting] = useState(false);
   const [importResult, setImportResult] = useState<ImportResult | null>(null);
@@ -226,21 +229,44 @@ export default function SettingsTab() {
     }
   }
 
-  async function handleImport(password: string) {
-    setShowImportModal(false);
-    setIsImporting(true);
+  async function handlePickFile() {
     try {
-      const result = await importDocuments(documents, password);
-      await replaceAll(result.merged);
-      setImportResult({ added: result.added, updated: result.updated, total: result.merged.length });
-      setShowImportResult(true);
+      const file = await pickImportFile();
+      setPickedFile(file);
+      if (file.needsPassword) {
+        setShowImportModal(true);
+      } else {
+        // Plaintext backup — import directly
+        await finishImport(file, '');
+      }
     } catch (e: any) {
       if (e.message !== 'Import cancelled') {
         setImportError(e.message);
         setShowImportError(true);
       }
+    }
+  }
+
+  async function finishImport(file: PickedFile, password: string) {
+    setShowImportModal(false);
+    setIsImporting(true);
+    try {
+      const result = await decryptAndImportFile(documents, file, password);
+      await replaceAll(result.merged);
+      setImportResult({ added: result.added, updated: result.updated, total: result.merged.length });
+      setShowImportResult(true);
+    } catch (e: any) {
+      setImportError(e.message);
+      setShowImportError(true);
     } finally {
       setIsImporting(false);
+      setPickedFile(null);
+    }
+  }
+
+  async function handleImportPassword(password: string) {
+    if (pickedFile) {
+      await finishImport(pickedFile, password);
     }
   }
 
@@ -308,7 +334,7 @@ export default function SettingsTab() {
           <View style={styles.cardDivider} />
           <TouchableOpacity
             style={styles.settingRow}
-            onPress={() => setShowImportModal(true)}
+            onPress={handlePickFile}
             disabled={isImporting}
           >
             <Feather name="download" size={22} color={colors.accentPrimary} style={styles.settingIcon} />
@@ -339,8 +365,9 @@ export default function SettingsTab() {
       />
       <ImportPasswordModal
         visible={showImportModal}
-        onConfirm={handleImport}
-        onCancel={() => setShowImportModal(false)}
+        fileName={pickedFile?.name}
+        onConfirm={handleImportPassword}
+        onCancel={() => { setShowImportModal(false); setPickedFile(null); }}
       />
       <ImportResultModal
         visible={showImportResult}
@@ -351,7 +378,7 @@ export default function SettingsTab() {
       <ImportErrorModal
         visible={showImportError}
         message={importError}
-        onRetry={() => { setShowImportError(false); setShowImportModal(true); }}
+        onRetry={() => { setShowImportError(false); handlePickFile(); }}
         onCancel={() => setShowImportError(false)}
       />
     </SafeAreaView>

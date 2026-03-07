@@ -115,10 +115,15 @@ export interface ImportResult {
   merged: CocoonDocument[];
 }
 
-export async function importDocuments(
-  existingDocuments: CocoonDocument[],
-  password: string
-): Promise<ImportResult> {
+export interface PickedFile {
+  uri: string;
+  name: string;
+  content: string;
+  needsPassword: boolean;
+}
+
+/** Step 1: Pick a .cocoon file and determine if it needs a password. */
+export async function pickImportFile(): Promise<PickedFile> {
   const result = await DocumentPicker.getDocumentAsync({
     type: '*/*',
     copyToCacheDirectory: true,
@@ -131,16 +136,25 @@ export async function importDocuments(
   const file = result.assets[0];
   const content = await FileSystem.readAsStringAsync(file.uri);
 
-  // Support both encrypted (.cocoon) and legacy plaintext JSON
+  const parsed = JSON.parse(content);
+  const needsPassword = !!parsed.ciphertext;
+
+  return { uri: file.uri, name: file.name ?? 'backup.cocoon', content, needsPassword };
+}
+
+/** Step 2: Decrypt (if needed) and merge into existing documents. */
+export async function decryptAndImportFile(
+  existingDocuments: CocoonDocument[],
+  pickedFile: PickedFile,
+  password: string
+): Promise<ImportResult> {
   let documents: CocoonDocument[];
   try {
-    const parsed = JSON.parse(content);
+    const parsed = JSON.parse(pickedFile.content);
     if (parsed.ciphertext) {
-      // Encrypted format
-      const decrypted = decryptBackup(content, password);
+      const decrypted = decryptBackup(pickedFile.content, password);
       documents = JSON.parse(decrypted).documents;
     } else if (parsed.documents) {
-      // Legacy plaintext
       documents = parsed.documents;
     } else {
       throw new Error('Unrecognised backup format');
