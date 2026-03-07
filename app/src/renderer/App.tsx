@@ -1382,7 +1382,11 @@ export default function App() {
         );
       }
       case "settings": {
-        return <SettingsView onBack={() => setViewMode("search")} />;
+        return <SettingsView onBack={() => setViewMode("search")} onDataChanged={() => {
+          window.ipc.invoke<Document[]>("load-documents").then((docs) => {
+            setAllDocuments(docs);
+          }).catch(() => {});
+        }} />;
       }
       case "search":
       default: {

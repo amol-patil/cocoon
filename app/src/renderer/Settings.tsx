@@ -9,6 +9,7 @@ interface AppSettings {
 
 interface SettingsViewProps {
   onBack: () => void;
+  onDataChanged?: () => void;
 }
 
 const BROWSER_OPTIONS = [
@@ -56,7 +57,7 @@ const S = {
   divider: { height: 1, background: "#3A3A3C" } as React.CSSProperties,
 };
 
-export default function SettingsView({ onBack }: SettingsViewProps) {
+export default function SettingsView({ onBack, onDataChanged }: SettingsViewProps) {
   const [isLoading, setIsLoading] = useState(true);
   const [settings, setSettings] = useState<AppSettings>({
     globalShortcut: "CommandOrControl+Option+Space",
@@ -169,6 +170,7 @@ export default function SettingsView({ onBack }: SettingsViewProps) {
       } else if (result.success) {
         setSuccessMessage(result.message || "Data imported successfully");
         setTimeout(() => setSuccessMessage(null), 3000);
+        onDataChanged?.();
       } else if (result.error !== "Import cancelled") {
         setError(result.error || "Failed to import");
       }
@@ -189,6 +191,7 @@ export default function SettingsView({ onBack }: SettingsViewProps) {
       if (result.success) {
         setSuccessMessage(result.message || "Data imported successfully");
         setTimeout(() => setSuccessMessage(null), 3000);
+        onDataChanged?.();
       } else if (result.error !== "Import cancelled") {
         setError(result.error || "Failed to import");
       }
@@ -210,6 +213,7 @@ export default function SettingsView({ onBack }: SettingsViewProps) {
       if (result.success) {
         setSuccessMessage("All data cleared");
         setTimeout(() => setSuccessMessage(null), 3000);
+        onDataChanged?.();
       } else {
         setError(result.error || "Failed to clear data");
       }
