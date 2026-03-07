@@ -12,7 +12,7 @@ import {
 } from "electron";
 import * as fs from "fs/promises";
 import * as crypto from "crypto";
-import { exec } from "child_process";
+import { execFile } from "child_process";
 import {
   loadSettings,
   saveSettings,
@@ -513,37 +513,25 @@ ipcMain.on("open-external-link", async (_event, url: string) => {
     try {
       console.log(`[IPC] Opening external URL: ${url}`);
 
-      // For macOS: Use the selected browser
+      // For macOS: Use the selected browser via execFile (no shell interpretation)
       if (process.platform === "darwin") {
-        const escapedUrl = url.replace(/"/g, '\\"');
-        let command = "";
+        const browserMap: Record<string, string> = {
+          chrome: "Google Chrome",
+          firefox: "Firefox",
+          safari: "Safari",
+          edge: "Microsoft Edge",
+          brave: "Brave Browser",
+        };
 
-        // Determine which browser to use
-        switch (appSettings.defaultBrowser.toLowerCase()) {
-          case "chrome":
-            command = `open -g -a "Google Chrome" "${escapedUrl}"`;
-            break;
-          case "firefox":
-            command = `open -g -a "Firefox" "${escapedUrl}"`;
-            break;
-          case "safari":
-            command = `open -g -a "Safari" "${escapedUrl}"`;
-            break;
-          case "edge":
-            command = `open -g -a "Microsoft Edge" "${escapedUrl}"`;
-            break;
-          case "brave":
-            command = `open -g -a "Brave Browser" "${escapedUrl}"`;
-            break;
-          default:
-            // Use system default browser
-            command = `open -g "${escapedUrl}"`;
-        }
+        const browserName = browserMap[appSettings.defaultBrowser.toLowerCase()];
+        const args = browserName
+          ? ["-g", "-a", browserName, url]
+          : ["-g", url];
 
-        exec(command, (error: Error | null, _stdout: string, _stderr: string) => { // eslint-disable-line @typescript-eslint/no-unused-vars
+        execFile("/usr/bin/open", args, (error) => {
           if (error) {
             console.error(
-              `[IPC] Error opening URL with command: ${error.message}`,
+              `[IPC] Error opening URL with execFile: ${error.message}`,
             );
             console.log("[IPC] Attempting fallback with shell.openExternal");
             shell.openExternal(url, { activate: true });

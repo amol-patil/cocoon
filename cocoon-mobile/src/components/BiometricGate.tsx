@@ -1,5 +1,6 @@
 import React from 'react';
 import { View, Text, TouchableOpacity, StyleSheet, SafeAreaView } from 'react-native';
+import { BlurView } from 'expo-blur';
 import { colors, typography } from '../theme/colors';
 
 interface Props {
@@ -22,11 +23,12 @@ export function BiometricGate({ onUnlock, isAuthenticating, biometricType }: Pro
         <Text style={styles.title}>Cocoon</Text>
         <Text style={styles.subtitle}>Your personal document vault</Text>
 
-        <View style={styles.iconCircle}>
+        {/* Glass icon circle */}
+        <BlurView intensity={35} tint="dark" style={styles.iconCircle}>
           <Text style={styles.lockIcon}>
             {biometricType === 'face' ? '⊙' : '🔒'}
           </Text>
-        </View>
+        </BlurView>
 
         <Text style={styles.lockedHint}>Your documents are locked</Text>
       </View>
@@ -70,11 +72,12 @@ const styles = StyleSheet.create({
     width: 96,
     height: 96,
     borderRadius: 48,
-    backgroundColor: colors.bgSurface,
     borderWidth: 1,
-    borderColor: colors.borderPrimary,
+    borderColor: 'rgba(255,255,255,0.14)',
+    overflow: 'hidden',
     alignItems: 'center',
     justifyContent: 'center',
+    backgroundColor: 'rgba(255,255,255,0.07)',
   },
   lockIcon: {
     fontSize: 40,

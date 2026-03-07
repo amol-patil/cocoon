@@ -3,6 +3,7 @@ import {
   View, Text, Modal, TouchableOpacity, TextInput, ScrollView, StyleSheet,
 } from 'react-native';
 import { colors } from '../theme/colors';
+import { useKeyboardHeight } from '../hooks/useKeyboardHeight';
 
 const SUGGESTIONS: Record<string, string[]> = {
   Passport: ['Passport Number', 'Expiry Date', 'Issue Date', 'Full Name', 'Nationality', 'Date of Birth'],
@@ -32,6 +33,7 @@ export function AddFieldSheet({ visible, category, existingLabels, onAdd, onDone
   const [label, setLabel] = useState('');
   const [value, setValue] = useState('');
   const [selectedSuggestion, setSelectedSuggestion] = useState<string | null>(null);
+  const keyboardHeight = useKeyboardHeight();
 
   const suggestions = getSuggestions(category);
 
@@ -55,7 +57,7 @@ export function AddFieldSheet({ visible, category, existingLabels, onAdd, onDone
     <Modal visible={visible} transparent animationType="slide" onRequestClose={onDone}>
       <View style={styles.overlay}>
         <TouchableOpacity style={styles.backdrop} onPress={onDone} activeOpacity={1} />
-        <View style={styles.sheet}>
+        <View style={[styles.sheet, keyboardHeight > 0 && { marginBottom: keyboardHeight }]}>
           {/* Handle */}
           <View style={styles.handleArea}>
             <View style={styles.handle} />

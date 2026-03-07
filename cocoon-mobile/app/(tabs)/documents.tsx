@@ -9,6 +9,7 @@ import { useDocuments } from '../../src/hooks/useDocuments';
 import { useSettings } from '../../src/hooks/useSettings';
 import { DocumentCard } from '../../src/components/DocumentCard';
 import { EmptyState } from '../../src/components/EmptyState';
+import { GlowBackground } from '../../src/components/GlowBackground';
 import { copyToClipboard } from '../../src/services/clipboardService';
 import { colors } from '../../src/theme/colors';
 import { CocoonDocument } from '../../src/shared/types';
@@ -62,6 +63,7 @@ export default function DocumentsTab() {
   );
 
   return (
+    <GlowBackground variant="docs">
     <SafeAreaView style={styles.container}>
       {/* Header */}
       <View style={styles.header}>
@@ -120,13 +122,14 @@ export default function DocumentsTab() {
         />
       )}
     </SafeAreaView>
+    </GlowBackground>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: colors.bgPrimary,
+    backgroundColor: 'transparent',
   },
   header: {
     flexDirection: 'row',

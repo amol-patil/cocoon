@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { View, TextInput, TouchableOpacity, StyleSheet } from 'react-native';
 import { Feather } from '@expo/vector-icons';
+import { BlurView } from 'expo-blur';
 import { colors } from '../theme/colors';
 
 interface Props {
@@ -14,8 +15,16 @@ export function SearchBar({ value, onChangeText, placeholder = 'Search documents
   const [isFocused, setIsFocused] = useState(false);
 
   return (
-    <View style={[styles.container, isFocused && styles.containerFocused]}>
-      <Feather name="search" size={18} color={isFocused ? colors.accentPrimary : colors.textSecondary} />
+    <BlurView
+      intensity={isFocused ? 40 : 28}
+      tint="dark"
+      style={[styles.container, isFocused && styles.containerFocused]}
+    >
+      <Feather
+        name="search"
+        size={18}
+        color={isFocused ? colors.accentPrimary : colors.textSecondary}
+      />
       <TextInput
         style={styles.input}
         value={value}
@@ -38,7 +47,7 @@ export function SearchBar({ value, onChangeText, placeholder = 'Search documents
           <Feather name="x" size={12} color={colors.textSecondary} />
         </TouchableOpacity>
       )}
-    </View>
+    </BlurView>
   );
 }
 
@@ -46,17 +55,19 @@ const styles = StyleSheet.create({
   container: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: colors.bgSurface,
     borderRadius: 26,
     paddingHorizontal: 20,
     gap: 14,
     height: 52,
     borderWidth: 1,
-    borderColor: colors.borderPrimary,
+    borderColor: 'rgba(255,255,255,0.20)',
+    overflow: 'hidden',
+    backgroundColor: 'rgba(255,255,255,0.12)',
   },
   containerFocused: {
-    borderColor: colors.accentPrimary,
+    borderColor: `${colors.accentPrimary}BB`,
     borderWidth: 1.5,
+    backgroundColor: 'rgba(255,255,255,0.15)',
   },
   input: {
     flex: 1,
@@ -68,7 +79,7 @@ const styles = StyleSheet.create({
     width: 24,
     height: 24,
     borderRadius: 12,
-    backgroundColor: colors.bgElevated,
+    backgroundColor: 'rgba(255,255,255,0.12)',
     alignItems: 'center',
     justifyContent: 'center',
   },

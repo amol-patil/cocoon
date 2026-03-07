@@ -4,6 +4,7 @@ import {
 } from 'react-native';
 import { Feather } from '@expo/vector-icons';
 import { colors } from '../theme/colors';
+import { useKeyboardHeight } from '../hooks/useKeyboardHeight';
 
 const TAG_COLORS = ['#4A7FA5', '#C9A962', '#4AA56A', '#7A5AF8', '#E8833A', '#D94A4A', '#6E6E70'];
 
@@ -32,6 +33,7 @@ export function TagPicker({
   const [editingTag, setEditingTag] = useState<string | null>(null);
   const [editName, setEditName] = useState('');
   const [editColor, setEditColor] = useState(TAG_COLORS[0]);
+  const keyboardHeight = useKeyboardHeight();
 
   const filtered = tags.filter((t) =>
     t.name.toLowerCase().includes(searchText.toLowerCase())
@@ -65,7 +67,7 @@ export function TagPicker({
     <Modal visible={visible} transparent animationType="slide" onRequestClose={onDone}>
       <View style={styles.overlay}>
         <TouchableOpacity style={styles.backdrop} onPress={onDone} activeOpacity={1} />
-        <View style={styles.sheet}>
+        <View style={[styles.sheet, keyboardHeight > 0 && { marginBottom: keyboardHeight }]}>
           {/* Handle */}
           <View style={styles.handleArea}>
             <View style={styles.handle} />

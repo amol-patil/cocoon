@@ -9,6 +9,7 @@ import { useSearch } from '../../src/hooks/useSearch';
 import { SearchBar } from '../../src/components/SearchBar';
 import { DocumentCard } from '../../src/components/DocumentCard';
 import { EmptyState } from '../../src/components/EmptyState';
+import { GlowBackground } from '../../src/components/GlowBackground';
 import { resolveTagColor } from '../../src/shared/colors';
 import { useSettings } from '../../src/hooks/useSettings';
 import { colors, typography } from '../../src/theme/colors';
@@ -21,6 +22,7 @@ export default function SearchTab() {
   const allTabs = ['All', ...categories];
 
   return (
+    <GlowBackground variant="home">
     <SafeAreaView style={styles.container}>
       {/* Header */}
       <View style={styles.header}>
@@ -97,13 +99,14 @@ export default function SearchTab() {
         />
       )}
     </SafeAreaView>
+    </GlowBackground>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: colors.bgPrimary,
+    backgroundColor: 'transparent',
   },
   header: {
     paddingHorizontal: 28,

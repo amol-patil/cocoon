@@ -5,10 +5,13 @@ import {
 } from 'react-native';
 import { router } from 'expo-router';
 import { Feather } from '@expo/vector-icons';
+import { BlurView } from 'expo-blur';
+import { GlowBackground } from '../../src/components/GlowBackground';
 import { useSettings } from '../../src/hooks/useSettings';
 import { useDocuments } from '../../src/hooks/useDocuments';
 import { exportDocuments, importDocuments } from '../../src/services/exportImportService';
 import { colors } from '../../src/theme/colors';
+import { useKeyboardHeight } from '../../src/hooks/useKeyboardHeight';
 
 interface ImportResult { added: number; updated: number; total: number; }
 
@@ -38,6 +41,7 @@ function ExportModal({
 }: { visible: boolean; onConfirm: (pw: string) => void; onCancel: () => void; }) {
   const [password, setPassword] = useState('');
   const [confirm, setConfirm] = useState('');
+  const keyboardHeight = useKeyboardHeight();
 
   function handleConfirm() {
     if (!password) { Alert.alert('Password required'); return; }
@@ -50,40 +54,46 @@ function ExportModal({
   return (
     <Modal visible={visible} transparent animationType="slide">
       <View style={styles.modalOverlay}>
-        <View style={styles.modalSheet}>
-          <View style={styles.modalHandle} />
-          <View style={styles.modalIconWrapper}>
-            <Feather name="lock" size={22} color={colors.accentPrimary} />
-          </View>
-          <Text style={styles.modalTitle}>Export Data</Text>
-          <Text style={styles.modalSubtitle}>Choose a password to encrypt your backup.</Text>
-          <Text style={styles.inputLabel}>PASSWORD</Text>
-          <TextInput
-            style={styles.passwordInput}
-            value={password}
-            onChangeText={setPassword}
-            placeholder="Enter password"
-            placeholderTextColor={colors.textTertiary}
-            secureTextEntry
-            autoFocus
-          />
-          <Text style={styles.inputHint}>ℹ  Minimum 8 characters. Store this safely — lost passwords cannot be recovered.</Text>
-          <Text style={styles.inputLabel}>CONFIRM PASSWORD</Text>
-          <TextInput
-            style={styles.passwordInput}
-            value={confirm}
-            onChangeText={setConfirm}
-            placeholder="Re-enter password"
-            placeholderTextColor={colors.textTertiary}
-            secureTextEntry
-          />
-          <TouchableOpacity style={styles.confirmBtn} onPress={handleConfirm}>
-            <Text style={styles.confirmBtnText}>Export .cocoon File</Text>
-          </TouchableOpacity>
-          <TouchableOpacity style={styles.cancelLink} onPress={() => { setPassword(''); setConfirm(''); onCancel(); }}>
-            <Text style={styles.cancelLinkText}>Cancel</Text>
-          </TouchableOpacity>
-        </View>
+        <ScrollView
+          contentContainerStyle={styles.modalScrollContent}
+          keyboardShouldPersistTaps="handled"
+          bounces={false}
+        >
+          <BlurView intensity={60} tint="dark" style={[styles.modalSheet, keyboardHeight > 0 && { marginBottom: keyboardHeight }]}>
+            <View style={styles.modalHandle} />
+            <View style={styles.modalIconWrapper}>
+              <Feather name="lock" size={22} color={colors.accentPrimary} />
+            </View>
+            <Text style={styles.modalTitle}>Export Data</Text>
+            <Text style={styles.modalSubtitle}>Choose a password to encrypt your backup.</Text>
+            <Text style={styles.inputLabel}>PASSWORD</Text>
+            <TextInput
+              style={styles.passwordInput}
+              value={password}
+              onChangeText={setPassword}
+              placeholder="Enter password"
+              placeholderTextColor={colors.textTertiary}
+              secureTextEntry
+              autoFocus
+            />
+            <Text style={styles.inputHint}>ℹ  Minimum 8 characters. Store this safely — lost passwords cannot be recovered.</Text>
+            <Text style={styles.inputLabel}>CONFIRM PASSWORD</Text>
+            <TextInput
+              style={styles.passwordInput}
+              value={confirm}
+              onChangeText={setConfirm}
+              placeholder="Re-enter password"
+              placeholderTextColor={colors.textTertiary}
+              secureTextEntry
+            />
+            <TouchableOpacity style={styles.confirmBtn} onPress={handleConfirm}>
+              <Text style={styles.confirmBtnText}>Export .cocoon File</Text>
+            </TouchableOpacity>
+            <TouchableOpacity style={styles.cancelLink} onPress={() => { setPassword(''); setConfirm(''); onCancel(); }}>
+              <Text style={styles.cancelLinkText}>Cancel</Text>
+            </TouchableOpacity>
+          </BlurView>
+        </ScrollView>
       </View>
     </Modal>
   );
@@ -93,11 +103,12 @@ function ImportPasswordModal({
   visible, onConfirm, onCancel,
 }: { visible: boolean; onConfirm: (pw: string) => void; onCancel: () => void; }) {
   const [password, setPassword] = useState('');
+  const keyboardHeight = useKeyboardHeight();
 
   return (
     <Modal visible={visible} transparent animationType="slide">
       <View style={styles.modalOverlay}>
-        <View style={styles.modalSheet}>
+        <BlurView intensity={60} tint="dark" style={[styles.modalSheet, keyboardHeight > 0 && { marginBottom: keyboardHeight }]}>
           <View style={styles.modalHandle} />
           <View style={styles.modalIconWrapper}>
             <Feather name="download" size={22} color={colors.accentPrimary} />
@@ -120,7 +131,7 @@ function ImportPasswordModal({
           <TouchableOpacity style={styles.cancelLink} onPress={() => { setPassword(''); onCancel(); }}>
             <Text style={styles.cancelLinkText}>Cancel</Text>
           </TouchableOpacity>
-        </View>
+        </BlurView>
       </View>
     </Modal>
   );
@@ -133,7 +144,7 @@ function ImportResultModal({
   return (
     <Modal visible={visible} transparent animationType="slide">
       <View style={styles.modalOverlay}>
-        <View style={styles.modalSheet}>
+        <BlurView intensity={60} tint="dark" style={styles.modalSheet}>
           <View style={styles.modalHandle} />
           <View style={styles.successCircle}>
             <Text style={styles.successCheck}>✓</Text>
@@ -160,7 +171,7 @@ function ImportResultModal({
           <TouchableOpacity style={styles.cancelLink} onPress={onViewDocs}>
             <Text style={styles.viewDocsText}>View Documents</Text>
           </TouchableOpacity>
-        </View>
+        </BlurView>
       </View>
     </Modal>
   );
@@ -172,7 +183,7 @@ function ImportErrorModal({
   return (
     <Modal visible={visible} transparent animationType="slide">
       <View style={styles.modalOverlay}>
-        <View style={styles.modalSheet}>
+        <BlurView intensity={60} tint="dark" style={styles.modalSheet}>
           <View style={styles.modalHandle} />
           <View style={styles.errorCircle}>
             <Text style={styles.errorX}>✕</Text>
@@ -185,7 +196,7 @@ function ImportErrorModal({
           <TouchableOpacity style={styles.cancelLink} onPress={onCancel}>
             <Text style={styles.cancelLinkText}>Cancel</Text>
           </TouchableOpacity>
-        </View>
+        </BlurView>
       </View>
     </Modal>
   );
@@ -245,6 +256,7 @@ export default function SettingsTab() {
   }
 
   return (
+    <GlowBackground variant="settings">
     <SafeAreaView style={styles.container}>
       <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
         <Text style={styles.pageTitle}>Settings</Text>
@@ -343,11 +355,12 @@ export default function SettingsTab() {
         onCancel={() => setShowImportError(false)}
       />
     </SafeAreaView>
+    </GlowBackground>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: colors.bgPrimary },
+  container: { flex: 1, backgroundColor: 'transparent' },
   scroll: { paddingHorizontal: 28, paddingTop: 0 },
   pageTitle: {
     fontFamily: 'CormorantGaramond-Regular',
@@ -365,8 +378,10 @@ const styles = StyleSheet.create({
     marginTop: 16,
   },
   card: {
-    backgroundColor: colors.bgSurface,
+    backgroundColor: 'rgba(255,255,255,0.11)',
     borderRadius: 20,
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.17)',
     overflow: 'hidden',
   },
   cardDivider: { height: 1, backgroundColor: colors.borderDivider },
@@ -403,10 +418,17 @@ const styles = StyleSheet.create({
   aboutTagline: { fontSize: 12, color: colors.textTertiary },
   // Modal shared
   modalOverlay: { flex: 1, backgroundColor: '#00000088', justifyContent: 'flex-end' },
+  modalScrollContent: { flexGrow: 1, justifyContent: 'flex-end' },
   modalSheet: {
-    backgroundColor: colors.bgSurface,
+    // backgroundColor is intentionally omitted — BlurView provides the frosted glass surface
+    backgroundColor: 'rgba(30,28,24,0.72)',
     borderTopLeftRadius: 28,
     borderTopRightRadius: 28,
+    borderTopWidth: 1,
+    borderLeftWidth: 1,
+    borderRightWidth: 1,
+    borderColor: 'rgba(255,255,255,0.10)',
+    overflow: 'hidden',
     paddingHorizontal: 28,
     paddingTop: 12,
     paddingBottom: 48,

@@ -1,6 +1,7 @@
 import React from 'react';
 import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
 import { Feather } from '@expo/vector-icons';
+import { BlurView } from 'expo-blur';
 import { type FuseResultMatch } from 'fuse.js';
 import { CocoonDocument } from '../shared/types';
 import { resolveTagColor } from '../shared/colors';
@@ -18,51 +19,57 @@ export function DocumentCard({ doc, onPress, matches }: Props) {
   const { settings } = useSettings();
   const categoryLabel = doc.category || doc.type;
   const categoryColor = resolveTagColor(categoryLabel, settings.categories);
-  const accentColor = categoryColor;
 
   return (
-    <TouchableOpacity style={styles.card} onPress={onPress} activeOpacity={0.7}>
-      <View style={[styles.accent, { backgroundColor: accentColor }]} />
-      <View style={styles.content}>
-        <HighlightedText
-          text={doc.type}
-          matches={matches}
-          fieldKey="type"
-          style={styles.title}
-          numberOfLines={1}
-        />
-        <View style={styles.metaRow}>
+    <TouchableOpacity onPress={onPress} activeOpacity={0.7} style={styles.touchable}>
+      <BlurView intensity={20} tint="dark" style={styles.card}>
+        <View style={[styles.accent, { backgroundColor: categoryColor }]} />
+        <View style={styles.content}>
           <HighlightedText
-            text={categoryLabel}
+            text={doc.type}
             matches={matches}
-            fieldKey="category"
-            style={[styles.metaCategory, { color: categoryColor }]}
-            highlightColor={colors.accentPrimary}
+            fieldKey="type"
+            style={styles.title}
+            numberOfLines={1}
           />
-          {doc.owner ? (
-            <>
-              <Text style={styles.metaDot}>·</Text>
-              <HighlightedText
-                text={doc.owner}
-                matches={matches}
-                fieldKey="owner"
-                style={styles.metaOwner}
-              />
-            </>
-          ) : null}
+          <View style={styles.metaRow}>
+            <HighlightedText
+              text={categoryLabel}
+              matches={matches}
+              fieldKey="category"
+              style={[styles.metaCategory, { color: categoryColor }]}
+              highlightColor={colors.accentPrimary}
+            />
+            {doc.owner ? (
+              <>
+                <Text style={styles.metaDot}>·</Text>
+                <HighlightedText
+                  text={doc.owner}
+                  matches={matches}
+                  fieldKey="owner"
+                  style={styles.metaOwner}
+                />
+              </>
+            ) : null}
+          </View>
         </View>
-      </View>
-      <Feather name="chevron-right" size={18} color={colors.textTertiary} />
+        <Feather name="chevron-right" size={18} color={colors.textTertiary} />
+      </BlurView>
     </TouchableOpacity>
   );
 }
 
 const styles = StyleSheet.create({
+  touchable: {
+    borderRadius: 20,
+    overflow: 'hidden',
+  },
   card: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: colors.bgSurface,
-    borderRadius: 20,
+    backgroundColor: 'rgba(255,255,255,0.11)',
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.17)',
     paddingVertical: 20,
     paddingHorizontal: 24,
     gap: 16,
