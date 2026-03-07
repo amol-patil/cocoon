@@ -1,83 +1,95 @@
 # Cocoon
 
-Visit the landing page: [https://amol-patil.github.io/cocoon/](https://amol-patil.github.io/cocoon/)
+> Your personal document vault — quick, secure retrieval of passport numbers, license details, insurance IDs, and more. Available as a macOS desktop overlay and an iOS mobile app.
 
-<!-- Short Description -->
-> A simple macOS overlay application for quickly retrieving those Driving License numbers, Passport numbers, Health Cards and many others without needing to dig through your files (or worse Photos). Bonus: it links directly to source file(s) so you can also attached the scanned copies if and when needed!
+[Landing Page](https://amol-patil.github.io/cocoon/)
 
-<!-- Optional: Badges (Build Status, License, Version, etc.) -->
-<!-- ![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg) -->
-<!-- ![GitHub release (latest by date)](https://img.shields.io/github/v/release/GITHUB_USERNAME/cocoon) -->
-
-<!-- Optional: Screenshot/GIF -->
-![Cocoon Screenshot](docs/images/cocoon-screenshot.png)
+<p align="center">
+  <img src="docs/images/cocoon-desktop.png" alt="Cocoon Desktop" width="520" />
+  &nbsp;&nbsp;&nbsp;
+  <img src="docs/images/cocoon-mobile.png" alt="Cocoon Mobile" width="200" />
+</p>
 
 ## Features
 
-*   Quickly find IDs (License, Passport, Health Card, etc.) via fuzzy search.
-*   Summon search instantly with a global keyboard shortcut (Configurable: default `Control+Option+Space`).
-*   Copy details (numbers, expiry dates, etc.) to the clipboard with one click.
-*   Link entries directly to source files (e.g., scanned PDFs) for easy access.
-*   Add, edit, and delete your document entries.
-*   Organize items as "Permanent" or "Temporary" (temporary items still searchable).
-*   **Data stored locally only** in a simple JSON file within your user profile; no cloud sync or external storage.
-*   Configure global shortcut, default browser for opening file links, and app behavior (Launch at startup, Show in Dock).
-*   Simple, dark-themed overlay interface.
+### Desktop (macOS overlay)
+- Summon instantly with a global keyboard shortcut (`Control+Option+Space`)
+- Fuzzy search across all documents, fields, owners, and categories
+- One-click copy of any field value to clipboard (with auto-clear timer)
+- Filter by category: Passport, License, Insurance, Medical, Financial
+- Link entries to source files (scanned PDFs, images)
+- Temporary items section for short-lived documents
+- Dark-themed overlay that stays out of your way
 
-## Installation (macOS)
+### Mobile (iOS)
+- Full document vault on your iPhone with Face ID / Touch ID protection
+- Swipe-to-copy any field value
+- Search with real-time highlighting
+- Add, edit, and organize documents with categories and owners
+- Encrypted export/import (`.cocoon` format, AES-256-GCM) to share between desktop and mobile
+- Dark theme with glassmorphism UI
 
-1.  **Download:** Go to the [Latest Release page](https://github.com/amol-patil/cocoon/releases/latest) on GitHub.
-2.  Download the `.dmg` file (e.g., `Cocoon-x.y.z.dmg`).
-3.  **Mount:** Double-click the downloaded `.dmg` file to open it.
-4.  **Install:** Drag the `Cocoon.app` icon into your `Applications` folder.
+### Security
+- Data encrypted at rest — desktop uses macOS Keychain via Electron `safeStorage`, mobile uses `expo-secure-store`
+- Biometric authentication (Touch ID / Face ID) on both platforms
+- Clipboard auto-clear after configurable timeout
+- Encrypted `.cocoon` backup format (AES-256-GCM with PBKDF2 key derivation)
+- No cloud sync, no external servers — everything stays on your devices
 
-**Important First Launch Note:**
+## Installation
 
-> Cocoon is currently distributed without official Apple Developer signing due to the costs involved for free, open-source projects. 
-> 
-> Because of this, the first time you open Cocoon, macOS Gatekeeper will show a warning like "'Cocoon.app' can't be opened because Apple cannot check it for malicious software."
-> 
-> To bypass this **safely for the first launch only**:
-> 
-> 1.  Locate `Cocoon.app` in your `/Applications` folder.
-> 2.  **Right-click** (or Control-click) the `Cocoon.app` icon.
-> 3.  Choose **"Open"** from the context menu.
-> 4.  A dialog will appear asking if you're sure. Click **"Open"** again.
-> 
-> You only need to do this the very first time you run this version of the app.
+### Desktop (macOS)
 
-<!-- Optional: Add Windows/Linux instructions if applicable later -->
+1. Download the `.dmg` from the [Latest Release](https://github.com/amol-patil/cocoon/releases/latest)
+2. Mount and drag `Cocoon.app` to Applications
+3. On first launch, right-click the app and choose "Open" to bypass Gatekeeper (the app is not yet signed with an Apple Developer certificate)
 
-## Basic Usage
+### Mobile (iOS)
 
-1.  **Launch:** Open Cocoon from your Applications folder.
-2.  **Global Shortcut:** Press `Control+Option+Space` to show/hide the search window.
-3.  **Search:** Type to search your documents.
-4.  **Select/Expand:** Use arrow keys (Up/Down) and Enter, or click to select/expand a document.
-5.  **Copy:** Click the copy icon (📋) next to a field in the expanded view.
-6.  **Settings:** Access settings via the gear icon (⚙️) in the main window or the application menu (if Dock icon is visible).
-7.  **Add/Manage:** Use the "Manage Documents" button to add, edit, or delete entries.
+The mobile app is not yet on the App Store. To run it locally:
+
+```bash
+cd cocoon-mobile
+npm install
+npx expo run:ios --device
+```
+
+Requires Xcode with a signing certificate configured (free Apple ID works).
 
 ## Development
 
-Interested in contributing? Great!
+### Desktop
 
-1.  **Prerequisites:**
-    *   Node.js (e.g., v18 or later)
-    *   npm (usually comes with Node.js)
-    *   Git
-2.  **Clone:** `git clone https://github.com/amol-patil/cocoon.git`
-3.  **Navigate:** `cd cocoon/app`
-4.  **Install Dependencies:** `npm install`
-5.  **Run Development Server:** `npm run start`
-6.  **Run Linters/Formatters:**
-    *   `npm run lint`
-    *   `npm run format`
-7.  **Build:** `npm run make` (creates distributable in `app/out`)
+```bash
+cd app
+npm install
+npm run start        # development
+npm run make         # build distributable
+```
+
+**Stack:** Electron 31, React 18, TypeScript, Tailwind CSS, Fuse.js, lowdb
+
+### Mobile
+
+```bash
+cd cocoon-mobile
+npm install
+npx expo start       # Expo Go / dev client
+npx expo run:ios     # native build
+```
+
+**Stack:** React Native (Expo), TypeScript, expo-secure-store, expo-router
+
+### Project Structure
+
+```
+cocoon/
+├── app/              # Desktop — Electron + React
+├── cocoon-mobile/    # Mobile — React Native (Expo)
+├── landing-page/     # Marketing site
+└── docs/             # Documentation and screenshots
+```
 
 ## License
 
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
-
-
-
+MIT — see [LICENSE](LICENSE) for details.
