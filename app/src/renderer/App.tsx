@@ -39,38 +39,6 @@ const getCategoryColorHex = (category: string): string => {
 const getDocTypeColor = (doc: Document): string =>
   getCategoryColorHex(doc.category || doc.type || "");
 
-// Owner color mapping (used in ExpandedCard)
-const getOwnerColor = (owner: string): { bg: string; text: string } => {
-  const colors = [
-    { bg: "bg-emerald-600", text: "text-emerald-100" },
-    { bg: "bg-blue-600", text: "text-blue-100" },
-    { bg: "bg-purple-600", text: "text-purple-100" },
-    { bg: "bg-rose-600", text: "text-rose-100" },
-    { bg: "bg-amber-600", text: "text-amber-100" },
-    { bg: "bg-cyan-600", text: "text-cyan-100" },
-  ];
-  const hash = owner
-    .split("")
-    .reduce((acc, char) => acc + char.charCodeAt(0), 0);
-  return colors[hash % colors.length];
-};
-
-// getCategoryColor kept for ExpandedCard
-const getCategoryColor = (category: string): { bg: string; text: string } => {
-  const colors = [
-    { bg: "bg-indigo-600", text: "text-indigo-100" },
-    { bg: "bg-teal-600", text: "text-teal-100" },
-    { bg: "bg-orange-600", text: "text-orange-100" },
-    { bg: "bg-pink-600", text: "text-pink-100" },
-    { bg: "bg-lime-600", text: "text-lime-100" },
-    { bg: "bg-sky-600", text: "text-sky-100" },
-  ];
-  const hash = category
-    .split("")
-    .reduce((acc, char) => acc + char.charCodeAt(0), 0);
-  return colors[hash % colors.length];
-};
-
 // --- Initial Data ---
 // Removed - will be loaded via IPC
 // const initialMockDocuments: Document[] = [ ... ];
@@ -93,86 +61,237 @@ const fuseOptions = {
 
 // --- Helper Components ---
 
-// ExpandedCard (from previous step - slightly modified for clarity)
-interface ExpandedCardProps {
+// View Document Modal (matches cocoon-designs.pen "View Document Modal")
+interface ViewDocumentModalProps {
   doc: Document;
-  onCollapse: () => void;
-  onCopy: (text: string) => void;
+  onClose: () => void;
+  onEdit: (doc: Document) => void;
+  onCopy: (text: string, label?: string) => void;
   onOpenFile: (link: string) => void;
 }
-function ExpandedCard({
+function ViewDocumentModal({
   doc,
-  onCollapse,
+  onClose,
+  onEdit,
   onCopy,
   onOpenFile,
-}: ExpandedCardProps) {
+}: ViewDocumentModalProps) {
+  const catColor = getCategoryColorHex(doc.category || doc.type || "");
+  const fieldEntries = Object.entries(doc.fields).filter(([, v]) => v);
+
+  const handleCopyAll = () => {
+    const allText = fieldEntries.map(([k, v]) => `${k}: ${v}`).join("\n");
+    onCopy(allText, "All Fields");
+  };
+
   return (
-    <div className="p-4 bg-white/10 rounded-lg h-full overflow-y-auto [-webkit-app-region:no-drag] relative">
-      <button
-        onClick={onCollapse}
-        className="absolute top-2 right-2 text-gray-400 hover:text-white focus:outline-none [-webkit-app-region:no-drag]"
-        aria-label="Close details"
+    <div className="flex flex-col h-full [-webkit-app-region:no-drag]" style={{ background: "#1A1A1C", borderRadius: 20 }}>
+      {/* Header */}
+      <div
+        className="flex items-center justify-between shrink-0"
+        style={{ padding: "20px 24px", borderBottom: "1px solid #3A3A3C" }}
       >
-        ✕
-      </button>
-      <h3 className="text-lg font-semibold mb-4 pr-8">
-        {doc.type}
-        {doc.owner && (
-          <span
-            className={`ml-2 px-2 py-0.5 rounded-full text-sm ${getOwnerColor(doc.owner).bg} ${getOwnerColor(doc.owner).text}`}
-          >
-            {doc.owner}
+        <div className="flex flex-col gap-0.5">
+          <span style={{ fontFamily: "'Cormorant Garamond', Georgia, serif", fontSize: 22, fontWeight: 600, color: "#F5F5F0" }}>
+            {doc.type}
           </span>
-        )}
-        {doc.category && (
-          <span
-            className={`ml-2 px-2 py-0.5 rounded-full text-sm ${getCategoryColor(doc.category).bg} ${getCategoryColor(doc.category).text}`}
+          <div className="flex items-center gap-2" style={{ fontFamily: "'Inter', sans-serif" }}>
+            {doc.category && (
+              <span className="flex items-center gap-1.5 text-xs font-medium" style={{ color: catColor }}>
+                <span className="w-2 h-2 rounded-full" style={{ background: catColor }} />
+                {doc.category}
+              </span>
+            )}
+            {doc.category && doc.owner && (
+              <span className="text-xs" style={{ color: "#6E6E70" }}>·</span>
+            )}
+            {doc.owner && (
+              <span className="text-xs" style={{ color: "#9A9A9E" }}>{doc.owner}</span>
+            )}
+          </div>
+        </div>
+        <div className="flex items-center gap-2">
+          <button
+            onClick={() => onEdit(doc)}
+            className="flex items-center gap-1.5 h-8 px-3 rounded-lg focus:outline-none transition-colors hover:border-[#6E6E70]"
+            style={{ border: "1px solid #3A3A3C" }}
           >
-            {doc.category}
+            <svg width="13" height="13" viewBox="0 0 12 12" fill="none">
+              <path d="M8.5 1.5a1.414 1.414 0 0 1 2 2L4 10 1 11l1-3 6.5-6.5Z" stroke="#9A9A9E" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round"/>
+            </svg>
+            <span style={{ fontFamily: "'Inter', sans-serif", fontSize: 12, fontWeight: 500, color: "#9A9A9E" }}>Edit</span>
+          </button>
+          <button
+            onClick={onClose}
+            className="w-8 h-8 rounded-full flex items-center justify-center focus:outline-none transition-colors hover:border-[#6E6E70]"
+            style={{ border: "1px solid #3A3A3C" }}
+          >
+            <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+              <path d="M2 2l10 10M12 2L2 12" stroke="#9A9A9E" strokeWidth="1.3" strokeLinecap="round"/>
+            </svg>
+          </button>
+        </div>
+      </div>
+
+      {/* Body: two columns */}
+      <div className="flex flex-1 overflow-hidden">
+        {/* Left column: Document Info */}
+        <div
+          className="flex flex-col gap-6 overflow-y-auto shrink-0"
+          style={{ width: 320, padding: 24, borderRight: "1px solid #3A3A3C" }}
+        >
+          <span style={{ color: "#6E6E70", fontFamily: "'Inter', sans-serif", fontSize: 11, fontWeight: 600, letterSpacing: 1 }}>
+            DOCUMENT INFO
           </span>
-        )}
-      </h3>
-      <ul className="space-y-2 mt-3">
-        {Object.entries(doc.fields).map(
-          ([key, value]) =>
-            value &&
-            key !== "owner" && (
-              <li key={key} className="flex justify-between items-center group">
-                <span className="text-sm font-medium text-gray-300 capitalize">
-                  {key}:
+
+          {/* Type */}
+          <div className="flex flex-col gap-1">
+            <span style={{ color: "#9A9A9E", fontFamily: "'Inter', sans-serif", fontSize: 11, fontWeight: 500 }}>Type</span>
+            <span style={{ color: "#F5F5F0", fontFamily: "'Inter', sans-serif", fontSize: 14 }}>{doc.type}</span>
+          </div>
+
+          {/* Owner */}
+          {doc.owner && (
+            <div className="flex flex-col gap-1">
+              <span style={{ color: "#9A9A9E", fontFamily: "'Inter', sans-serif", fontSize: 11, fontWeight: 500 }}>Owner</span>
+              <span style={{ color: "#F5F5F0", fontFamily: "'Inter', sans-serif", fontSize: 14 }}>{doc.owner}</span>
+            </div>
+          )}
+
+          {/* Category */}
+          {doc.category && (
+            <div className="flex flex-col gap-1">
+              <span style={{ color: "#9A9A9E", fontFamily: "'Inter', sans-serif", fontSize: 11, fontWeight: 500 }}>Category</span>
+              <div className="flex items-center gap-2">
+                <span className="w-2 h-2 rounded-full" style={{ background: catColor }} />
+                <span style={{ color: "#F5F5F0", fontFamily: "'Inter', sans-serif", fontSize: 14 }}>{doc.category}</span>
+              </div>
+            </div>
+          )}
+
+          {/* File Link */}
+          {doc.fileLink && (
+            <div className="flex flex-col gap-1">
+              <span style={{ color: "#9A9A9E", fontFamily: "'Inter', sans-serif", fontSize: 11, fontWeight: 500 }}>Google Drive Link</span>
+              <button
+                onClick={() => onOpenFile(doc.fileLink)}
+                className="flex items-center gap-2 focus:outline-none group"
+              >
+                <span
+                  className="text-xs truncate"
+                  style={{ color: "#C9A962", fontFamily: "'Inter', sans-serif", maxWidth: 240 }}
+                >
+                  {doc.fileLink}
                 </span>
-                <div className="flex items-center space-x-2">
-                  <span className="text-sm text-white truncate max-w-xs">
-                    {value}
-                  </span>
-                  <button
-                    onClick={() => onCopy(value)}
-                    className="text-gray-400 hover:text-blue-400 opacity-0 group-hover:opacity-100 transition-opacity focus:outline-none [-webkit-app-region:no-drag]"
-                    aria-label={`Copy ${key}`}
-                  >
-                    📋
-                  </button>
+                <svg width="12" height="12" viewBox="0 0 12 12" fill="none" className="shrink-0">
+                  <path d="M5 2H2a1 1 0 0 0-1 1v7a1 1 0 0 0 1 1h7a1 1 0 0 0 1-1V7" stroke="#C9A962" strokeWidth="1.2" strokeLinecap="round"/>
+                  <path d="M7.5 1H11v3.5" stroke="#C9A962" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round"/>
+                  <path d="M11 1 6 6" stroke="#C9A962" strokeWidth="1.2" strokeLinecap="round"/>
+                </svg>
+              </button>
+            </div>
+          )}
+
+          {/* Divider + Temporary indicator */}
+          {doc.isTemporary && (
+            <>
+              <div style={{ height: 1, background: "#3A3A3C" }} />
+              <div
+                className="flex items-center gap-2 px-2.5 py-1.5 rounded-lg"
+                style={{ background: "#242426" }}
+              >
+                <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+                  <circle cx="7" cy="7" r="5.5" stroke="#6E6E70" strokeWidth="1.1"/>
+                  <path d="M7 4.2v3.1l1.8 1.8" stroke="#6E6E70" strokeWidth="1.1" strokeLinecap="round" strokeLinejoin="round"/>
+                </svg>
+                <span style={{ color: "#6E6E70", fontFamily: "'Inter', sans-serif", fontSize: 12, fontWeight: 500 }}>
+                  Temporary Item
+                </span>
+              </div>
+            </>
+          )}
+        </div>
+
+        {/* Right column: Fields */}
+        <div className="flex flex-col gap-4 flex-1 overflow-y-auto" style={{ padding: 24 }}>
+          <div className="flex items-center justify-between">
+            <span style={{ color: "#6E6E70", fontFamily: "'Inter', sans-serif", fontSize: 11, fontWeight: 600, letterSpacing: 1 }}>
+              FIELDS
+            </span>
+            {fieldEntries.length > 0 && (
+              <button
+                onClick={handleCopyAll}
+                className="flex items-center gap-1.5 h-7 px-2.5 rounded-md focus:outline-none transition-colors hover:border-[#6E6E70]"
+                style={{ border: "1px solid #3A3A3C" }}
+              >
+                <svg width="12" height="12" viewBox="0 0 13 13" fill="none">
+                  <rect x="4.5" y="4.5" width="7" height="7" rx="1.5" stroke="#6E6E70" strokeWidth="1.2"/>
+                  <path d="M3 8.5H2a1 1 0 0 1-1-1V2a1 1 0 0 1 1-1h5.5a1 1 0 0 1 1 1v1" stroke="#6E6E70" strokeWidth="1.2" strokeLinecap="round"/>
+                </svg>
+                <span style={{ color: "#6E6E70", fontFamily: "'Inter', sans-serif", fontSize: 11, fontWeight: 500 }}>Copy All</span>
+              </button>
+            )}
+          </div>
+
+          {fieldEntries.length > 0 ? (
+            <div style={{ borderRadius: 14, border: "1px solid #3A3A3C", background: "#242426", overflow: "hidden" }}>
+              {fieldEntries.map(([key, value], idx) => (
+                <div key={key}>
+                  {idx > 0 && <div style={{ height: 1, background: "#3A3A3C" }} />}
+                  <div className="flex items-center justify-between" style={{ padding: "14px 18px" }}>
+                    <div className="flex flex-col gap-0.5 min-w-0 flex-1">
+                      <span style={{ color: "#9A9A9E", fontFamily: "'Inter', sans-serif", fontSize: 11, fontWeight: 500 }}>{key}</span>
+                      <span style={{ color: "#F5F5F0", fontFamily: "'Inter', sans-serif", fontSize: 14 }}>{value}</span>
+                    </div>
+                    <button
+                      onClick={() => value && onCopy(value, key)}
+                      className="w-8 h-8 rounded-full flex items-center justify-center shrink-0 focus:outline-none transition-colors hover:border-[#6E6E70]"
+                      style={{ border: "1px solid #3A3A3C" }}
+                      aria-label={`Copy ${key}`}
+                    >
+                      <svg width="13" height="13" viewBox="0 0 13 13" fill="none">
+                        <rect x="4.5" y="4.5" width="7" height="7" rx="1.5" stroke="#C9A962" strokeWidth="1.2"/>
+                        <path d="M3 8.5H2a1 1 0 0 1-1-1V2a1 1 0 0 1 1-1h5.5a1 1 0 0 1 1 1v1" stroke="#C9A962" strokeWidth="1.2" strokeLinecap="round"/>
+                      </svg>
+                    </button>
+                  </div>
                 </div>
-              </li>
-            ),
-        )}
-        {doc.fileLink && (
-          <li className="pt-3 mt-3 border-t border-white/20">
-            <button
-              onClick={() => onOpenFile(doc.fileLink)}
-              className="w-full text-left text-blue-400 hover:text-blue-300 focus:outline-none flex items-center [-webkit-app-region:no-drag]"
+              ))}
+            </div>
+          ) : (
+            <div
+              className="flex items-center justify-center flex-1"
+              style={{ color: "#4A4A4C", fontFamily: "'Inter', sans-serif", fontSize: 13 }}
             >
-              <span className="mr-2">📁</span> Open Linked File
-            </button>
-          </li>
-        )}
-      </ul>
-      <button
-        onClick={onCollapse}
-        className="mt-4 text-sm text-gray-400 hover:text-white focus:outline-none [-webkit-app-region:no-drag]"
+              No fields
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* Footer */}
+      <div
+        className="flex items-center justify-end gap-2 shrink-0"
+        style={{ padding: "14px 24px", borderTop: "1px solid #3A3A3C" }}
       >
-        ← Back to results
-      </button>
+        <button
+          onClick={onClose}
+          className="flex items-center justify-center h-9 px-5 rounded-[10px] focus:outline-none transition-colors hover:border-[#6E6E70]"
+          style={{ border: "1px solid #3A3A3C", color: "#9A9A9E", fontFamily: "'Inter', sans-serif", fontSize: 13, fontWeight: 500 }}
+        >
+          Close
+        </button>
+        <button
+          onClick={() => onEdit(doc)}
+          className="flex items-center gap-1.5 h-9 px-5 rounded-[10px] focus:outline-none transition-colors hover:opacity-90"
+          style={{ background: "#C9A962", fontFamily: "'Inter', sans-serif", fontSize: 13, fontWeight: 600, color: "#1A1A1C" }}
+        >
+          <svg width="13" height="13" viewBox="0 0 12 12" fill="none">
+            <path d="M8.5 1.5a1.414 1.414 0 0 1 2 2L4 10 1 11l1-3 6.5-6.5Z" stroke="#1A1A1C" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round"/>
+          </svg>
+          Edit Document
+        </button>
+      </div>
     </div>
   );
 }
@@ -858,7 +977,7 @@ function DocumentForm({
 }
 
 // Define AppViewMode type
-type AppViewMode = "search" | "editForm" | "settings";
+type AppViewMode = "search" | "editForm" | "settings" | "viewDocument";
 
 // --- Main App Component ---
 export default function App() {
@@ -866,6 +985,8 @@ export default function App() {
   const [allDocuments, setAllDocuments] = useState<Document[]>([]);
   const [appSettings, setAppSettings] = useState<{ clipboardAutoClearSeconds: number }>({ clipboardAutoClearSeconds: 30 });
   const clearTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const toastTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const [toastMessage, setToastMessage] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true); // Loading state
   const [error, setError] = useState<string | null>(null); // Error state
   const [searchTerm, setSearchTerm] = useState("");
@@ -1178,17 +1299,20 @@ export default function App() {
   }, [editReturnView]);
 
   // === Other Handlers ===
-  const handleCopy = useCallback((text: string) => {
+  const handleCopy = useCallback((text: string, label?: string) => {
     try {
       window.electronClipboard.writeText(text);
-      console.log("Copied field to clipboard.");
+
+      // Show toast
+      if (toastTimerRef.current) clearTimeout(toastTimerRef.current);
+      setToastMessage(label ? `${label} Copied` : "Copied");
+      toastTimerRef.current = setTimeout(() => setToastMessage(null), 2000);
 
       // Schedule clipboard auto-clear
       if (clearTimerRef.current) clearTimeout(clearTimerRef.current);
       if (appSettings.clipboardAutoClearSeconds > 0) {
         clearTimerRef.current = setTimeout(() => {
           window.ipc.send("clear-clipboard", null);
-          console.log("Clipboard auto-cleared.");
         }, appSettings.clipboardAutoClearSeconds * 1000);
       }
     } catch (error) {
@@ -1249,8 +1373,11 @@ export default function App() {
       // First handle Escape key globally to dismiss window regardless of view
       if (event.key === "Escape") {
         event.preventDefault();
-        // For expanded card view, just collapse instead of hiding window
-        if (viewMode === "search" && expandedDocId) {
+        // For view document modal, go back to search
+        if (viewMode === "viewDocument") {
+          setExpandedDocId(null);
+          setViewMode("search");
+        } else if (viewMode === "search" && expandedDocId) {
           setExpandedDocId(null);
         } else if (viewMode === "editForm") {
           // For edit form, just cancel the edit
@@ -1263,16 +1390,16 @@ export default function App() {
       }
 
       // Handle other keys based on view mode
+      if (viewMode === "viewDocument") {
+        if (event.key === "ArrowLeft") {
+          event.preventDefault();
+          setExpandedDocId(null);
+          setViewMode("search");
+        }
+        return;
+      }
       if (viewMode === "search") {
         // --- Search Mode Key Handling ---
-        if (expandedDocId) {
-          // Expanded View Active
-          if (event.key === "ArrowLeft") {
-            event.preventDefault();
-            setExpandedDocId(null); // Collapse
-          }
-        } else {
-          // List View Active
           if (filteredResults.length === 0) return;
           switch (event.key) {
             case "ArrowDown":
@@ -1289,6 +1416,7 @@ export default function App() {
               event.preventDefault();
               if (filteredResults[selectedIndex]) {
                 setExpandedDocId(filteredResults[selectedIndex].item.id);
+                setViewMode("viewDocument");
               }
               break;
             case "Enter":
@@ -1296,15 +1424,10 @@ export default function App() {
               if (filteredResults[selectedIndex]) {
                 const item = filteredResults[selectedIndex].item;
                 const value = item.fields[item.defaultField];
-                if (value) handleCopy(value);
-                else
-                  console.log(
-                    `Default field '${item.defaultField}' not found.`,
-                  );
+                if (value) handleCopy(value, item.defaultField);
               }
               break;
           }
-        }
       }
     },
     [
@@ -1324,6 +1447,8 @@ export default function App() {
       window.ipc.send("resize-window", { width: 760, height: 560 });
     } else if (viewMode === "settings") {
       window.ipc.send("resize-window", { width: 760, height: 620 });
+    } else if (viewMode === "viewDocument") {
+      window.ipc.send("resize-window", { width: 760, height: 680 });
     } else {
       window.ipc.send("resize-window", { width: 760, height: 480 });
     }
@@ -1388,26 +1513,23 @@ export default function App() {
           }).catch(() => {});
         }} />;
       }
+      case "viewDocument": {
+        const viewDoc = expandedDocId ? allDocuments.find((d) => d.id === expandedDocId) : null;
+        if (!viewDoc) { setViewMode("search"); return null; }
+        return (
+          <ViewDocumentModal
+            doc={viewDoc}
+            onClose={() => { setExpandedDocId(null); setViewMode("search"); }}
+            onEdit={(d) => { handleEditDocument(d); }}
+            onCopy={handleCopy}
+            onOpenFile={handleOpenFile}
+          />
+        );
+      }
       case "search":
       default: {
-        const currentExpandedDoc = expandedDocId
-          ? allDocuments.find((d) => d.id === expandedDocId)
-          : null;
-
         return (
           <div className="flex flex-col h-full">
-            {/* Expanded card overlay */}
-            {currentExpandedDoc ? (
-              <div className="[-webkit-app-region:no-drag] absolute inset-4">
-                <ExpandedCard
-                  doc={currentExpandedDoc}
-                  onCollapse={() => setExpandedDocId(null)}
-                  onCopy={handleCopy}
-                  onOpenFile={handleOpenFile}
-                />
-              </div>
-            ) : (
-              <>
                 {/* Header */}
                 <div className="flex justify-between items-center px-6 py-5 flex-shrink-0">
                   <span
@@ -1523,6 +1645,7 @@ export default function App() {
                             : isTemp ? "inset 0 0 0 1px #3A3A3C" : undefined,
                         }}
                         onClick={() => setSelectedIndex(globalIndex)}
+                        onDoubleClick={() => { setExpandedDocId(doc.id); setViewMode("viewDocument"); }}
                       >
                         {/* Left bar: solid for permanent, dashed for temporary */}
                         {isTemp ? (
@@ -1598,7 +1721,7 @@ export default function App() {
                             onClick={(e) => {
                               e.stopPropagation();
                               const value = doc.fields[doc.defaultField];
-                              if (value) handleCopy(value);
+                              if (value) handleCopy(value, doc.defaultField);
                             }}
                             className="w-[30px] h-[30px] rounded-full flex items-center justify-center focus:outline-none transition-colors hover:border-[#6E6E70]"
                             style={{ border: "1px solid #3A3A3C", color: "#C9A962" }}
@@ -1856,8 +1979,6 @@ export default function App() {
                     </div>
                   );
                 })()}
-              </>
-            )}
           </div>
         );
       }
@@ -1878,6 +1999,40 @@ export default function App() {
       tabIndex={-1}
     >
       {renderContent()}
+
+      {/* Copy Toast */}
+      {toastMessage && (
+        <div
+          className="absolute flex items-center justify-center pointer-events-none"
+          style={{ bottom: 20, left: 0, right: 0, zIndex: 100 }}
+        >
+          <div
+            className="flex items-center gap-2.5 pointer-events-auto"
+            style={{
+              height: 44,
+              paddingLeft: 16,
+              paddingRight: 20,
+              borderRadius: 22,
+              background: "#242426",
+              border: "1px solid #C9A962",
+              boxShadow: "0 8px 24px rgba(0,0,0,0.4)",
+              fontFamily: "'Inter', sans-serif",
+            }}
+          >
+            <div
+              className="flex items-center justify-center"
+              style={{ width: 22, height: 22, borderRadius: 11, background: "#C9A96222" }}
+            >
+              <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
+                <path d="M2.5 6.5L5 9l4.5-6" stroke="#C9A962" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+              </svg>
+            </div>
+            <span style={{ fontSize: 13, fontWeight: 500, color: "#F5F5F0" }}>
+              {toastMessage}
+            </span>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
