@@ -1,0 +1,141 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Cocoon — Your Personal Document Vault</title>
+    <meta name="description" content="Quick, secure retrieval of passport numbers, license details, insurance IDs and more. macOS desktop overlay + iOS mobile app." />
+    <link rel="icon" type="image/svg+xml" href="favicon.svg" />
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;500;600&family=Inter:wght@400;500;600&display=swap" rel="stylesheet" />
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        bg: '#0D0D10',
+                        surface: '#1A1A1C',
+                        gold: '#C9A962',
+                        'gold-dim': 'rgba(201,169,98,0.14)',
+                    },
+                    fontFamily: {
+                        serif: ['"Cormorant Garamond"', 'serif'],
+                        sans: ['Inter', 'system-ui', 'sans-serif'],
+                    },
+                },
+            },
+        }
+    </script>
+</head>
+<body class="bg-bg text-gray-100 font-sans antialiased overflow-x-hidden">
+
+    <!-- Ambient glow -->
+    <div class="fixed top-[-200px] left-1/2 -translate-x-1/2 w-[800px] h-[600px] bg-[radial-gradient(ellipse,rgba(201,169,98,0.08)_0%,transparent_70%)] pointer-events-none z-0"></div>
+
+    <div class="relative z-10 max-w-5xl mx-auto px-6">
+
+        <!-- Nav -->
+        <nav class="flex justify-between items-center py-6">
+            <a href="/" class="font-serif text-3xl font-medium text-gray-100 no-underline">Cocoon</a>
+            <div class="flex items-center gap-7">
+                <a href="#features" class="hidden sm:inline text-sm font-medium text-gray-400 hover:text-gray-100 transition-colors no-underline">Features</a>
+                <a href="#security" class="hidden sm:inline text-sm font-medium text-gray-400 hover:text-gray-100 transition-colors no-underline">Security</a>
+                <a href="https://github.com/amol-patil/cocoon" target="_blank" class="hidden sm:inline text-sm font-medium text-gray-400 hover:text-gray-100 transition-colors no-underline">GitHub</a>
+                <a href="https://github.com/amol-patil/cocoon/releases/latest" class="inline-flex items-center gap-2 bg-gold text-[#1A1A1C] px-6 py-2.5 rounded-full text-sm font-semibold hover:opacity-90 transition-opacity no-underline">Download</a>
+            </div>
+        </nav>
+
+        <!-- Hero -->
+        <section class="text-center pt-20 pb-16">
+            <span class="inline-block bg-gold-dim border border-gold/25 text-gold text-xs font-semibold px-4 py-1.5 rounded-full tracking-widest uppercase mb-6">Desktop + Mobile</span>
+            <h1 class="font-serif text-5xl sm:text-7xl font-normal leading-[1.1] mb-5">
+                Your documents,<br /><span class="text-gold">always within reach</span>
+            </h1>
+            <p class="text-lg text-gray-400 max-w-xl mx-auto mb-9">
+                Passport numbers, license details, insurance IDs — find and copy anything in seconds. Encrypted, local-only, and private.
+            </p>
+            <div class="flex gap-4 justify-center flex-wrap">
+                <a href="https://github.com/amol-patil/cocoon/releases/latest" class="inline-flex items-center gap-2 bg-gold text-[#1A1A1C] px-7 py-3 rounded-full text-sm font-semibold hover:opacity-90 transition-opacity no-underline">Download for macOS</a>
+                <a href="https://github.com/amol-patil/cocoon" target="_blank" class="inline-flex items-center gap-2 border border-white/10 text-gray-100 px-7 py-3 rounded-full text-sm font-medium hover:border-white/20 transition-colors no-underline">View on GitHub</a>
+            </div>
+        </section>
+
+        <!-- Screenshots -->
+        <section class="flex justify-center items-end gap-12 py-16 flex-wrap">
+            <div class="text-center">
+                <img src="cocoon-desktop.png" alt="Cocoon desktop overlay" class="w-full max-w-[560px] rounded-2xl shadow-2xl ring-1 ring-white/10" />
+                <p class="text-xs text-gray-500 mt-4 tracking-[3px] uppercase">macOS Overlay</p>
+            </div>
+            <div class="text-center">
+                <img src="cocoon-mobile.png" alt="Cocoon mobile app" class="w-[200px] rounded-3xl shadow-2xl ring-1 ring-white/10" />
+                <p class="text-xs text-gray-500 mt-4 tracking-[3px] uppercase">iOS App</p>
+            </div>
+        </section>
+
+        <!-- Features -->
+        <section class="py-20" id="features">
+            <h2 class="font-serif text-4xl font-normal text-center mb-12">Why Cocoon?</h2>
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
+                <div class="bg-surface border border-white/[0.08] rounded-2xl p-7">
+                    <div class="w-11 h-11 rounded-xl bg-gold-dim flex items-center justify-center text-xl mb-4">⚡</div>
+                    <h3 class="text-base font-semibold mb-2">Instant Access</h3>
+                    <p class="text-sm text-gray-400 leading-relaxed">Summon the desktop overlay with a global shortcut. Search, copy, and dismiss — all in under two seconds.</p>
+                </div>
+                <div class="bg-surface border border-white/[0.08] rounded-2xl p-7">
+                    <div class="w-11 h-11 rounded-xl bg-gold-dim flex items-center justify-center text-xl mb-4">🔍</div>
+                    <h3 class="text-base font-semibold mb-2">Fuzzy Search</h3>
+                    <p class="text-sm text-gray-400 leading-relaxed">Find documents by name, category, owner, or any field value. Powered by Fuse.js with smart highlighting.</p>
+                </div>
+                <div class="bg-surface border border-white/[0.08] rounded-2xl p-7">
+                    <div class="w-11 h-11 rounded-xl bg-gold-dim flex items-center justify-center text-xl mb-4">📱</div>
+                    <h3 class="text-base font-semibold mb-2">Desktop + Mobile</h3>
+                    <p class="text-sm text-gray-400 leading-relaxed">macOS overlay for your desk, iOS app in your pocket. Same encrypted export format works on both.</p>
+                </div>
+                <div class="bg-surface border border-white/[0.08] rounded-2xl p-7">
+                    <div class="w-11 h-11 rounded-xl bg-gold-dim flex items-center justify-center text-xl mb-4">📋</div>
+                    <h3 class="text-base font-semibold mb-2">One-Click Copy</h3>
+                    <p class="text-sm text-gray-400 leading-relaxed">Copy any field to the clipboard instantly. Auto-clear after a configurable timeout for extra security.</p>
+                </div>
+                <div class="bg-surface border border-white/[0.08] rounded-2xl p-7">
+                    <div class="w-11 h-11 rounded-xl bg-gold-dim flex items-center justify-center text-xl mb-4">🏷️</div>
+                    <h3 class="text-base font-semibold mb-2">Organized</h3>
+                    <p class="text-sm text-gray-400 leading-relaxed">Categories, owners, custom fields, and temporary items. Structure your documents however you want.</p>
+                </div>
+                <div class="bg-surface border border-white/[0.08] rounded-2xl p-7">
+                    <div class="w-11 h-11 rounded-xl bg-gold-dim flex items-center justify-center text-xl mb-4">🔗</div>
+                    <h3 class="text-base font-semibold mb-2">File Links</h3>
+                    <p class="text-sm text-gray-400 leading-relaxed">Link entries to scanned PDFs or images on your drive. Open the original document with one click.</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- Security -->
+        <section class="py-20 text-center" id="security">
+            <h2 class="font-serif text-4xl font-normal mb-4">Built for privacy</h2>
+            <p class="text-gray-400 max-w-md mx-auto mb-8">Your data never leaves your devices. No accounts, no cloud, no tracking.</p>
+            <div class="flex gap-3 justify-center flex-wrap">
+                <div class="flex items-center gap-2.5 bg-surface border border-white/[0.08] rounded-xl px-5 py-3.5 text-sm"><span class="text-lg">🔐</span> Encrypted at rest</div>
+                <div class="flex items-center gap-2.5 bg-surface border border-white/[0.08] rounded-xl px-5 py-3.5 text-sm"><span class="text-lg">🧬</span> Face ID / Touch ID</div>
+                <div class="flex items-center gap-2.5 bg-surface border border-white/[0.08] rounded-xl px-5 py-3.5 text-sm"><span class="text-lg">📦</span> AES-256-GCM exports</div>
+                <div class="flex items-center gap-2.5 bg-surface border border-white/[0.08] rounded-xl px-5 py-3.5 text-sm"><span class="text-lg">🚫</span> No cloud sync</div>
+                <div class="flex items-center gap-2.5 bg-surface border border-white/[0.08] rounded-xl px-5 py-3.5 text-sm"><span class="text-lg">🧹</span> Clipboard auto-clear</div>
+            </div>
+        </section>
+
+        <!-- CTA -->
+        <section class="text-center py-20">
+            <h2 class="font-serif text-4xl font-normal mb-4">Ready to try Cocoon?</h2>
+            <p class="text-gray-400 mb-8">Free, open source, and yours to keep.</p>
+            <a href="https://github.com/amol-patil/cocoon/releases/latest" class="inline-flex items-center gap-2 bg-gold text-[#1A1A1C] px-7 py-3 rounded-full text-sm font-semibold hover:opacity-90 transition-opacity no-underline">Download for macOS</a>
+        </section>
+
+        <!-- Footer -->
+        <footer class="text-center py-10 border-t border-white/[0.08] text-sm text-gray-500">
+            <p>Cocoon is open source under the <a href="https://github.com/amol-patil/cocoon/blob/master/LICENSE" class="text-gold no-underline hover:underline">MIT License</a>. Built by <a href="https://github.com/amol-patil" class="text-gold no-underline hover:underline">Amol Patil</a>.</p>
+        </footer>
+
+    </div>
+</body>
+</html>
