@@ -35,7 +35,7 @@ async function persist(): Promise<void> {
 
 export async function getAllDocuments(): Promise<CocoonDocument[]> {
   const store = await load();
-  return store.documents;
+  return [...store.documents];
 }
 
 export async function getDocument(id: string): Promise<CocoonDocument | null> {
