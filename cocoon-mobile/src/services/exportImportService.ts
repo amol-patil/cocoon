@@ -2,10 +2,11 @@
  * exportImportService.ts
  *
  * Encrypted export/import using AES-256-GCM + PBKDF2-SHA256.
- * Wire format matches desktop exactly:
- *   { version:1, salt:b64, iv:b64, tag:b64, ciphertext:b64 }
+ * Wire format:
+ *   { version:1, iterations:N, salt:b64, iv:b64, tag:b64, ciphertext:b64 }
  *
- * PBKDF2: SHA-256, 600,000 iterations, 32-byte key
+ * PBKDF2: SHA-256, 600,000 iterations, 32-byte key (native OpenSSL via quick-crypto).
+ * Matches desktop security exactly. Compatible in both directions.
  */
 
 import * as Sharing from 'expo-sharing';
@@ -13,10 +14,12 @@ import * as DocumentPicker from 'expo-document-picker';
 import * as FileSystem from 'expo-file-system/legacy';
 import * as Crypto from 'expo-crypto';
 import { gcm } from '@noble/ciphers/aes.js';
-import { pbkdf2 } from '@noble/hashes/pbkdf2.js';
-import { sha256 } from '@noble/hashes/sha2.js';
+import { pbkdf2Sync } from 'react-native-quick-crypto';
 import { CocoonDocument, CocoonBackup } from '../shared/types';
 import { mergeDocuments } from '../shared/merge';
+
+// Same 600k iterations as desktop — native OpenSSL makes this fast (<1s)
+const PBKDF2_ITERATIONS = 600_000;
 
 // --- Base64 helpers (no Buffer — works in Hermes) ---
 
@@ -37,16 +40,20 @@ function fromBase64(b64: string): Uint8Array {
   return bytes;
 }
 
-// --- Key derivation (matches desktop) ---
-function deriveKey(password: string, salt: Uint8Array): Uint8Array {
-  return pbkdf2(sha256, password, salt, { c: 600_000, dkLen: 32 });
+// --- Key derivation (native OpenSSL via react-native-quick-crypto) ---
+
+function deriveKey(password: string, salt: Uint8Array, iterations: number): Uint8Array {
+  const result = pbkdf2Sync(password, salt, iterations, 32, 'sha256');
+  // pbkdf2Sync returns Buffer — convert to Uint8Array for noble/ciphers
+  return new Uint8Array(result);
 }
 
 // --- Encrypt for export ---
+
 function encryptBackup(plaintext: string, password: string): string {
   const salt = Crypto.getRandomBytes(32);
   const iv = Crypto.getRandomBytes(12);
-  const key = deriveKey(password, salt);
+  const key = deriveKey(password, salt, PBKDF2_ITERATIONS);
   const cipher = gcm(key, iv);
   const ciphertextWithTag = cipher.encrypt(new TextEncoder().encode(plaintext));
 
@@ -56,6 +63,7 @@ function encryptBackup(plaintext: string, password: string): string {
 
   const backup: CocoonBackup = {
     version: 1,
+    iterations: PBKDF2_ITERATIONS,
     salt: toBase64(salt),
     iv: toBase64(iv),
     tag: toBase64(tag),
@@ -66,16 +74,18 @@ function encryptBackup(plaintext: string, password: string): string {
 }
 
 // --- Decrypt imported backup ---
+
 function decryptBackup(backupJson: string, password: string): string {
   const backup = JSON.parse(backupJson) as CocoonBackup;
   if (backup.version !== 1) throw new Error('Unsupported backup version');
 
+  const iterations = backup.iterations ?? PBKDF2_ITERATIONS;
   const salt = fromBase64(backup.salt);
   const iv = fromBase64(backup.iv);
   const tag = fromBase64(backup.tag);
   const ciphertext = fromBase64(backup.ciphertext);
 
-  const key = deriveKey(password, salt);
+  const key = deriveKey(password, salt, iterations);
 
   // noble/ciphers gcm expects ciphertext+tag concatenated
   const combined = new Uint8Array(ciphertext.length + tag.length);
@@ -91,7 +101,7 @@ function decryptBackup(backupJson: string, password: string): string {
 
 export async function exportDocuments(
   documents: CocoonDocument[],
-  password: string
+  password: string,
 ): Promise<void> {
   const plaintext = JSON.stringify({ documents });
   const encrypted = encryptBackup(plaintext, password);
@@ -146,7 +156,7 @@ export async function pickImportFile(): Promise<PickedFile> {
 export async function decryptAndImportFile(
   existingDocuments: CocoonDocument[],
   pickedFile: PickedFile,
-  password: string
+  password: string,
 ): Promise<ImportResult> {
   let documents: CocoonDocument[];
   try {

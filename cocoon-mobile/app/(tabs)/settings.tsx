@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import {
   View, Text, StyleSheet, SafeAreaView, ScrollView, Switch,
-  TouchableOpacity, Alert, Modal, TextInput, ActivityIndicator,
+  TouchableOpacity, Alert, Modal, TextInput, ActivityIndicator, Keyboard,
 } from 'react-native';
 import { router } from 'expo-router';
 import { Feather } from '@expo/vector-icons';
@@ -47,9 +47,11 @@ function ExportModal({
     if (!password) { Alert.alert('Password required'); return; }
     if (password.length < 8) { Alert.alert('Password too short', 'Minimum 8 characters.'); return; }
     if (password !== confirm) { Alert.alert('Passwords don\'t match', 'Please re-enter your password.'); return; }
-    onConfirm(password);
+    Keyboard.dismiss();
+    const pw = password;
     setPassword('');
     setConfirm('');
+    onConfirm(pw);
   }
 
   return (
@@ -220,6 +222,8 @@ export default function SettingsTab() {
   async function handleExport(password: string) {
     setShowExportModal(false);
     setIsExporting(true);
+    // Wait for modal dismiss animation before presenting share sheet
+    await new Promise((r) => setTimeout(r, 350));
     try {
       await exportDocuments(documents, password);
     } catch (e: any) {

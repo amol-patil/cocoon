@@ -37,9 +37,10 @@ export const DEFAULT_SETTINGS: AppSettings = {
   clipboardAutoClearSeconds: 30,
 };
 
-// Encrypted export format — must match desktop wire format exactly
+// Encrypted export format — compatible with desktop wire format
 export interface CocoonBackup {
   version: 1;
+  iterations?: number; // PBKDF2 iteration count (absent = 600,000 for legacy desktop files)
   salt: string;   // 32 random bytes, base64-encoded
   iv: string;     // 12 bytes, base64-encoded
   tag: string;    // 16 bytes GCM auth tag, base64-encoded

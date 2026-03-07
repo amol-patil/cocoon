@@ -322,8 +322,10 @@ ipcMain.handle("save-settings", async (_event, newSettings: AppSettings) => {
 });
 
 // Encryption helpers for export/import
-function deriveKey(password: string, salt: Buffer): Buffer {
-  return crypto.pbkdf2Sync(password, salt, 600_000, 32, "sha256");
+const DEFAULT_PBKDF2_ITERATIONS = 600_000;
+
+function deriveKey(password: string, salt: Buffer, iterations = DEFAULT_PBKDF2_ITERATIONS): Buffer {
+  return crypto.pbkdf2Sync(password, salt, iterations, 32, "sha256");
 }
 
 function encryptData(plaintext: string, password: string): string {
@@ -340,6 +342,7 @@ function encryptData(plaintext: string, password: string): string {
 
   const backup = {
     version: 1,
+    iterations: DEFAULT_PBKDF2_ITERATIONS,
     salt: salt.toString("base64"),
     iv: iv.toString("base64"),
     tag: tag.toString("base64"),
@@ -352,11 +355,12 @@ function decryptData(backupJson: string, password: string): string {
   const backup = JSON.parse(backupJson);
   if (backup.version !== 1) throw new Error("Unsupported backup version");
 
+  const iterations = typeof backup.iterations === "number" ? backup.iterations : DEFAULT_PBKDF2_ITERATIONS;
   const salt = Buffer.from(backup.salt, "base64");
   const iv = Buffer.from(backup.iv, "base64");
   const tag = Buffer.from(backup.tag, "base64");
   const ciphertext = Buffer.from(backup.ciphertext, "base64");
-  const key = deriveKey(password, salt);
+  const key = deriveKey(password, salt, iterations);
 
   const decipher = crypto.createDecipheriv("aes-256-gcm", key, iv);
   decipher.setAuthTag(tag);

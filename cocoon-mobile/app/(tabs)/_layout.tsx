@@ -80,7 +80,7 @@ function CustomTabBar({ state, navigation }: any) {
   return (
     <View style={[styles.wrapper, { paddingBottom: Math.max(insets.bottom, 8) }]}>
       {/* Glass pill — BlurView is the base layer */}
-      <BlurView intensity={55} tint="dark" style={styles.pillBlur}>
+      <BlurView intensity={80} tint="dark" style={styles.pillBlur}>
         {/*
           Inner container with explicit margin — gives us a clean coordinate
           space where top:0 / left:0 is exactly INSET pixels from the pill edge.
@@ -89,10 +89,11 @@ function CustomTabBar({ state, navigation }: any) {
           {/* Animated gold bubble */}
           <Animated.View style={[styles.bubble, { width: tabWidth, height: bubbleH }, bubbleStyle]} />
 
-          {/* Tabs */}
+          {/* Tabs — only render routes that match TAB_CONFIG */}
           {state.routes.map((route: any, index: number) => {
+            const tab = TAB_CONFIG.find((t) => t.name === route.name);
+            if (!tab) return null;
             const isActive = state.index === index;
-            const tab = TAB_CONFIG[index];
 
             return (
               <TouchableOpacity
@@ -102,12 +103,12 @@ function CustomTabBar({ state, navigation }: any) {
                 activeOpacity={0.75}
               >
                 <Feather
-                  name={tab?.icon}
+                  name={tab.icon}
                   size={18}
                   color={isActive ? colors.bgPrimary : colors.textSecondary}
                 />
                 <Text style={[styles.tabLabel, isActive && styles.tabLabelActive]}>
-                  {tab?.label}
+                  {tab.label}
                 </Text>
               </TouchableOpacity>
             );
@@ -122,11 +123,11 @@ export default function TabLayout() {
   return (
     <Tabs
       tabBar={(props) => <CustomTabBar {...props} />}
-      screenOptions={{ headerShown: false }}
+      screenOptions={{ headerShown: false, href: null }}
     >
-      <Tabs.Screen name="index" />
-      <Tabs.Screen name="documents" />
-      <Tabs.Screen name="settings" />
+      <Tabs.Screen name="index" options={{ href: '/(tabs)' }} />
+      <Tabs.Screen name="documents" options={{ href: '/(tabs)/documents' }} />
+      <Tabs.Screen name="settings" options={{ href: '/(tabs)/settings' }} />
     </Tabs>
   );
 }
@@ -144,10 +145,10 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     borderRadius: 34,
     borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.22)',
+    borderColor: 'rgba(255,255,255,0.12)',
     height: 62,
     overflow: 'hidden',
-    backgroundColor: 'rgba(255,255,255,0.13)',
+    backgroundColor: 'rgba(10,10,12,0.85)',
   },
   pillInner: {
     flex: 1,

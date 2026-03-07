@@ -27,7 +27,8 @@
         "backgroundImage": "./assets/images/android-icon-background.png",
         "monochromeImage": "./assets/images/android-icon-monochrome.png"
       },
-      "predictiveBackGestureEnabled": false
+      "predictiveBackGestureEnabled": false,
+      "package": "co.pixelpie.cocoon"
     },
     "web": {
       "bundler": "metro",
@@ -37,7 +38,9 @@
     "plugins": [
       "expo-router",
       "expo-secure-store",
-      "expo-sharing"
+      "expo-sharing",
+      "react-native-quick-crypto",
+      "expo-build-properties"
     ],
     "experiments": {
       "typedRoutes": true
