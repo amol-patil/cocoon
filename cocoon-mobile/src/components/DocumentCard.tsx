@@ -61,7 +61,7 @@ export function DocumentCard({ doc, onPress, matches }: Props) {
 
 const styles = StyleSheet.create({
   touchable: {
-    borderRadius: 20,
+    borderRadius: 16,
     overflow: 'hidden',
   },
   card: {
@@ -70,9 +70,11 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(255,255,255,0.11)',
     borderWidth: 1,
     borderColor: 'rgba(255,255,255,0.17)',
+    borderRadius: 16,
     paddingVertical: 20,
     paddingHorizontal: 24,
     gap: 16,
+    overflow: 'hidden',
   },
   accent: {
     width: 4,

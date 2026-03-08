@@ -140,7 +140,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     marginTop: 4,
   },
-  chipScroll: { marginHorizontal: -28, paddingHorizontal: 28 },
+  chipScroll: { marginHorizontal: -28, paddingHorizontal: 28, paddingBottom: 12 },
   chip: {
     flexDirection: 'row',
     alignItems: 'center',
