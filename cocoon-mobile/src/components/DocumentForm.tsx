@@ -17,13 +17,14 @@ interface Props {
   categories: TagItem[];
   onSave: (doc: Omit<CocoonDocument, 'id'>) => void;
   onCancel: () => void;
+  onRetake?: () => void;
   onCategoriesChange?: (categories: TagItem[]) => void;
   onOwnersChange?: (owners: TagItem[]) => void;
 }
 
 export function DocumentForm({
   initial, owners: initOwners, categories: initCategories,
-  onSave, onCancel, onCategoriesChange, onOwnersChange,
+  onSave, onCancel, onRetake, onCategoriesChange, onOwnersChange,
 }: Props) {
   const [type, setType] = useState(initial?.type ?? '');
   const [owner, setOwner] = useState(initial?.owner ?? '');
@@ -112,8 +113,21 @@ export function DocumentForm({
       >
         {/* Screen title */}
         <Text style={styles.screenTitle}>
-          {initial?.id ? 'Edit Document' : 'New Document'}
+          {onRetake ? 'Review Document' : initial?.id ? 'Edit Document' : 'New Document'}
         </Text>
+
+        {/* Scanned-from-photo banner */}
+        {onRetake && (
+          <View style={styles.retakeBanner}>
+            <View style={styles.retakeBannerLeft}>
+              <Feather name="camera" size={16} color={colors.accentPrimary} />
+              <Text style={styles.retakeBannerText}>Scanned from photo</Text>
+            </View>
+            <TouchableOpacity onPress={onRetake}>
+              <Text style={styles.retakeBannerLink}>Retake</Text>
+            </TouchableOpacity>
+          </View>
+        )}
 
         {/* Document Info card */}
         <View style={styles.infoCard}>
@@ -472,4 +486,31 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   doneFieldText: { fontSize: 13, fontWeight: '600', color: '#1A1A1C' },
+  retakeBanner: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    backgroundColor: 'rgba(201,169,98,0.10)',
+    borderWidth: 1,
+    borderColor: colors.accentPrimary,
+    borderRadius: 12,
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+  },
+  retakeBannerLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  retakeBannerText: {
+    fontSize: 13,
+    fontWeight: '500',
+    color: colors.accentPrimary,
+  },
+  retakeBannerLink: {
+    fontSize: 13,
+    fontWeight: '500',
+    color: colors.accentPrimary,
+    textDecorationLine: 'underline',
+  },
 });

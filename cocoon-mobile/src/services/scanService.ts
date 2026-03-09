@@ -58,6 +58,21 @@ export async function pickDocumentPhoto(): Promise<string | null> {
   return result.assets[0].uri;
 }
 
+// --- Capture from camera ---
+
+export async function captureDocumentPhoto(): Promise<string | null> {
+  const { status } = await ImagePicker.requestCameraPermissionsAsync();
+  if (status !== 'granted') {
+    throw new Error('Camera permission is required to scan documents.');
+  }
+  const result = await ImagePicker.launchCameraAsync({
+    mediaTypes: ['images'],
+    quality: 1,
+  });
+  if (result.canceled || !result.assets?.[0]) return null;
+  return result.assets[0].uri;
+}
+
 // --- OCR ---
 
 export async function runOcr(imageUri: string): Promise<string> {
