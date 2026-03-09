@@ -10,6 +10,10 @@ import { GlowBackground } from '../../src/components/GlowBackground';
 import { useSettings } from '../../src/hooks/useSettings';
 import { useDocuments } from '../../src/hooks/useDocuments';
 import { exportDocuments, pickImportFile, decryptAndImportFile, PickedFile } from '../../src/services/exportImportService';
+import {
+  isModelDownloaded, downloadModel, pickDocumentPhoto,
+  runOcr, runFullPipeline, releaseContext, deleteModel, ScanResult,
+} from '../../src/services/scanService';
 import { colors } from '../../src/theme/colors';
 import { useKeyboardHeight } from '../../src/hooks/useKeyboardHeight';
 
@@ -219,6 +223,16 @@ export default function SettingsTab() {
   const [importError, setImportError] = useState('');
   const [showImportError, setShowImportError] = useState(false);
 
+  // --- Scan test state ---
+  const [modelReady, setModelReady] = useState(false);
+  const [downloadPct, setDownloadPct] = useState(-1); // -1 = not downloading
+  const [scanStatus, setScanStatus] = useState('');
+  const [scanResult, setScanResult] = useState<ScanResult | null>(null);
+
+  React.useEffect(() => {
+    isModelDownloaded().then(setModelReady);
+  }, []);
+
   async function handleExport(password: string) {
     setShowExportModal(false);
     setIsExporting(true);
@@ -271,6 +285,49 @@ export default function SettingsTab() {
   async function handleImportPassword(password: string) {
     if (pickedFile) {
       await finishImport(pickedFile, password);
+    }
+  }
+
+  async function handleDownloadModel() {
+    setDownloadPct(0);
+    try {
+      await downloadModel((pct) => setDownloadPct(pct));
+      setModelReady(true);
+      setDownloadPct(-1);
+    } catch (e: any) {
+      Alert.alert('Download failed', e.message);
+      setDownloadPct(-1);
+    }
+  }
+
+  async function handleDeleteModel() {
+    await deleteModel();
+    await releaseContext();
+    setModelReady(false);
+  }
+
+  async function handleTestScan() {
+    setScanResult(null);
+    setScanStatus('Picking photo...');
+    const uri = await pickDocumentPhoto();
+    if (!uri) { setScanStatus(''); return; }
+
+    try {
+      setScanStatus('Running OCR...');
+      if (!modelReady) {
+        // OCR-only test if model not downloaded
+        const ocrText = await runOcr(uri);
+        setScanResult({ ocrText, ocrTimeMs: 0, llmResponse: '(model not downloaded)', llmTimeMs: 0, parsed: null });
+        setScanStatus('');
+        return;
+      }
+      setScanStatus('Running OCR + LLM pipeline...');
+      const result = await runFullPipeline(uri);
+      setScanResult(result);
+      setScanStatus('');
+    } catch (e: any) {
+      setScanStatus('');
+      Alert.alert('Scan failed', e.message);
     }
   }
 
@@ -351,6 +408,57 @@ export default function SettingsTab() {
               : <Feather name="chevron-right" size={18} color={colors.textTertiary} />}
           </TouchableOpacity>
         </View>
+
+        <SectionLabel label="SCAN TEST" />
+        <View style={styles.card}>
+          <View style={styles.settingRow}>
+            <Feather name="cpu" size={22} color={colors.accentPrimary} style={styles.settingIcon} />
+            <View style={styles.settingInfo}>
+              <Text style={styles.settingLabel}>Qwen 2.5 0.5B</Text>
+              <Text style={styles.settingSubtitle}>
+                {downloadPct >= 0
+                  ? `Downloading... ${Math.round(downloadPct * 100)}%`
+                  : modelReady ? 'Ready (~350 MB)' : 'Not downloaded'}
+              </Text>
+            </View>
+            <View style={styles.settingRight}>
+              {downloadPct >= 0
+                ? <ActivityIndicator color={colors.accentPrimary} />
+                : modelReady
+                  ? <TouchableOpacity onPress={handleDeleteModel}><Text style={styles.valueText}>Delete</Text></TouchableOpacity>
+                  : <TouchableOpacity onPress={handleDownloadModel}><Text style={styles.valueText}>Download</Text></TouchableOpacity>
+              }
+            </View>
+          </View>
+          <View style={styles.cardDivider} />
+          <TouchableOpacity style={styles.settingRow} onPress={handleTestScan}>
+            <Feather name="camera" size={22} color={colors.accentPrimary} style={styles.settingIcon} />
+            <View style={styles.settingInfo}>
+              <Text style={styles.settingLabel}>Test Scan</Text>
+              <Text style={styles.settingSubtitle}>
+                {scanStatus || 'Pick a document photo to test'}
+              </Text>
+            </View>
+            {scanStatus ? <ActivityIndicator color={colors.accentPrimary} /> : <Feather name="chevron-right" size={18} color={colors.textTertiary} />}
+          </TouchableOpacity>
+        </View>
+
+        {scanResult && (
+          <>
+            <SectionLabel label="SCAN RESULTS" />
+            <View style={styles.aboutCard}>
+              <Text style={styles.settingLabel}>OCR Text ({scanResult.ocrTimeMs}ms)</Text>
+              <Text style={{ fontSize: 11, color: colors.textSecondary, marginTop: 4 }} numberOfLines={10}>
+                {scanResult.ocrText || '(no text detected)'}
+              </Text>
+              <View style={[styles.cardDivider, { marginVertical: 12 }]} />
+              <Text style={styles.settingLabel}>LLM Response ({scanResult.llmTimeMs}ms)</Text>
+              <Text style={{ fontSize: 11, color: colors.textSecondary, marginTop: 4 }} numberOfLines={20}>
+                {scanResult.parsed ? JSON.stringify(scanResult.parsed, null, 2) : scanResult.llmResponse}
+              </Text>
+            </View>
+          </>
+        )}
 
         <SectionLabel label="ABOUT" />
         <View style={styles.aboutCard}>
