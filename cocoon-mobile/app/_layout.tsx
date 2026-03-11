@@ -23,7 +23,7 @@ export const unstable_settings = { initialRouteName: '(tabs)' };
 SplashScreen.preventAutoHideAsync();
 
 // Inner shell — has access to settings context
-function AppShell() {
+function AppShell({ fontsLoaded }: { fontsLoaded: boolean }) {
   const { settings, isLoading: settingsLoading } = useSettings();
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [isAuthenticating, setIsAuthenticating] = useState(false);
@@ -36,8 +36,8 @@ function AppShell() {
   }, []);
 
   useEffect(() => {
-    if (!settingsLoading) SplashScreen.hideAsync();
-  }, [settingsLoading]);
+    if (!settingsLoading && fontsLoaded) SplashScreen.hideAsync();
+  }, [settingsLoading, fontsLoaded]);
 
   const tryAuthenticate = useCallback(async () => {
     if (authInProgress.current) return;
@@ -133,7 +133,7 @@ export default function RootLayout() {
     <GestureHandlerRootView style={{ flex: 1 }}>
       <SettingsProvider>
         <DocumentsProvider>
-          <AppShell />
+          <AppShell fontsLoaded={fontsLoaded} />
         </DocumentsProvider>
       </SettingsProvider>
     </GestureHandlerRootView>

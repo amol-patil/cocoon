@@ -18,7 +18,8 @@
       "infoPlist": {
         "NSFaceIDUsageDescription": "Cocoon uses Face ID to protect your documents.",
         "NSCameraUsageDescription": "Cocoon may use the camera to scan documents.",
-        "NSPhotoLibraryUsageDescription": "Cocoon needs photo access to scan document images."
+        "NSPhotoLibraryUsageDescription": "Cocoon needs photo access to scan document images.",
+        "ITSAppUsesNonExemptEncryption": true
       }
     },
     "android": {
@@ -42,7 +43,8 @@
       "expo-sharing",
       "react-native-quick-crypto",
       "expo-image-picker",
-      "expo-build-properties"
+      "expo-build-properties",
+      "expo-splash-screen"
     ],
     "experiments": {
       "typedRoutes": true
