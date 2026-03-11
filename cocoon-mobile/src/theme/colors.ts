@@ -44,11 +44,11 @@ export const typography = {
   displayLarge: { fontFamily: 'CormorantGaramond-Regular', fontSize: 42, lineHeight: 42 },
   displayMedium: { fontFamily: 'CormorantGaramond-Regular', fontSize: 36, lineHeight: 36 },
   displaySmall: { fontFamily: 'CormorantGaramond-Regular', fontSize: 28, lineHeight: 28 },
-  // Serif with medium weight — card titles, field values
-  serifMedium20: { fontFamily: 'CormorantGaramond-Medium', fontSize: 20, lineHeight: 24 },
-  serifSemiBold20: { fontFamily: 'CormorantGaramond-SemiBold', fontSize: 20, lineHeight: 24 },
-  serifMedium18: { fontFamily: 'CormorantGaramond-Medium', fontSize: 18 },
-  serifSemiBold28: { fontFamily: 'CormorantGaramond-SemiBold', fontSize: 28 },
+  // Card titles, field values, setting labels — now system sans (Inter/SF Pro)
+  serifMedium20: { fontSize: 16, fontWeight: '500' as const },
+  serifSemiBold20: { fontSize: 16, fontWeight: '600' as const },
+  serifMedium18: { fontSize: 16, fontWeight: '400' as const },
+  serifSemiBold28: { fontSize: 28, fontWeight: '600' as const },
   // Inter — body/UI text (system font on iOS = SF Pro, very close to Inter)
   headingLarge: { fontSize: 20, fontWeight: '600' as const },
   headingMedium: { fontSize: 17, fontWeight: '600' as const },

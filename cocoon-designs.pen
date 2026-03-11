@@ -429,8 +429,8 @@
                           "name": "card1Title",
                           "fill": "$text-primary",
                           "content": "Canada Passport",
-                          "fontFamily": "Cormorant Garamond",
-                          "fontSize": 20,
+                          "fontFamily": "Inter",
+                          "fontSize": 16,
                           "fontWeight": "500"
                         },
                         {
@@ -523,8 +523,8 @@
                           "name": "card2Title",
                           "fill": "$text-primary",
                           "content": "Driver's License",
-                          "fontFamily": "Cormorant Garamond",
-                          "fontSize": 20,
+                          "fontFamily": "Inter",
+                          "fontSize": 16,
                           "fontWeight": "500"
                         },
                         {
@@ -617,8 +617,8 @@
                           "name": "card3Title",
                           "fill": "$text-primary",
                           "content": "Health Card",
-                          "fontFamily": "Cormorant Garamond",
-                          "fontSize": 20,
+                          "fontFamily": "Inter",
+                          "fontSize": 16,
                           "fontWeight": "500"
                         },
                         {
@@ -711,8 +711,8 @@
                           "name": "card4Title",
                           "fill": "$text-primary",
                           "content": "Vaccination Record",
-                          "fontFamily": "Cormorant Garamond",
-                          "fontSize": 20,
+                          "fontFamily": "Inter",
+                          "fontSize": 16,
                           "fontWeight": "500"
                         },
                         {
@@ -805,8 +805,8 @@
                           "name": "card5Title",
                           "fill": "$text-primary",
                           "content": "Bank Statement",
-                          "fontFamily": "Cormorant Garamond",
-                          "fontSize": 20,
+                          "fontFamily": "Inter",
+                          "fontSize": 16,
                           "fontWeight": "500"
                         },
                         {
@@ -1318,9 +1318,9 @@
                           "name": "field1Value",
                           "fill": "$text-primary",
                           "content": "X12345678",
-                          "fontFamily": "Cormorant Garamond",
-                          "fontSize": 20,
-                          "fontWeight": "500"
+                          "fontFamily": "Inter",
+                          "fontSize": 16,
+                          "fontWeight": "normal"
                         }
                       ]
                     },
@@ -1397,9 +1397,9 @@
                           "name": "field2Value",
                           "fill": "$text-primary",
                           "content": "John Michael Smith",
-                          "fontFamily": "Cormorant Garamond",
-                          "fontSize": 20,
-                          "fontWeight": "500"
+                          "fontFamily": "Inter",
+                          "fontSize": 16,
+                          "fontWeight": "normal"
                         }
                       ]
                     },
@@ -1476,9 +1476,9 @@
                           "name": "field3Value",
                           "fill": "$text-primary",
                           "content": "March 15, 2029",
-                          "fontFamily": "Cormorant Garamond",
-                          "fontSize": 20,
-                          "fontWeight": "500"
+                          "fontFamily": "Inter",
+                          "fontSize": 16,
+                          "fontWeight": "normal"
                         }
                       ]
                     },
@@ -1555,9 +1555,9 @@
                           "name": "field4Value",
                           "fill": "$text-primary",
                           "content": "Canada",
-                          "fontFamily": "Cormorant Garamond",
-                          "fontSize": 20,
-                          "fontWeight": "500"
+                          "fontFamily": "Inter",
+                          "fontSize": 16,
+                          "fontWeight": "normal"
                         }
                       ]
                     },
@@ -1634,9 +1634,9 @@
                           "name": "field5Value",
                           "fill": "$text-primary",
                           "content": "March 15, 2019",
-                          "fontFamily": "Cormorant Garamond",
-                          "fontSize": 20,
-                          "fontWeight": "500"
+                          "fontFamily": "Inter",
+                          "fontSize": 16,
+                          "fontWeight": "normal"
                         }
                       ]
                     },
@@ -2150,9 +2150,9 @@
                                   "name": "bioTitle",
                                   "fill": "$text-primary",
                                   "content": "Face ID / Touch ID",
-                                  "fontFamily": "Cormorant Garamond",
-                                  "fontSize": 18,
-                                  "fontWeight": "500"
+                                  "fontFamily": "Inter",
+                                  "fontSize": 16,
+                                  "fontWeight": "normal"
                                 },
                                 {
                                   "type": "text",
@@ -2242,9 +2242,9 @@
                                   "name": "clipTitle",
                                   "fill": "$text-primary",
                                   "content": "Clipboard Auto-Clear",
-                                  "fontFamily": "Cormorant Garamond",
-                                  "fontSize": 18,
-                                  "fontWeight": "500"
+                                  "fontFamily": "Inter",
+                                  "fontSize": 16,
+                                  "fontWeight": "normal"
                                 },
                                 {
                                   "type": "text",
@@ -2346,9 +2346,9 @@
                                   "name": "exportTitle",
                                   "fill": "$text-primary",
                                   "content": "Export Data",
-                                  "fontFamily": "Cormorant Garamond",
-                                  "fontSize": 18,
-                                  "fontWeight": "500"
+                                  "fontFamily": "Inter",
+                                  "fontSize": 16,
+                                  "fontWeight": "normal"
                                 },
                                 {
                                   "type": "text",
@@ -2426,9 +2426,9 @@
                                   "name": "importTitle",
                                   "fill": "$text-primary",
                                   "content": "Import Data",
-                                  "fontFamily": "Cormorant Garamond",
-                                  "fontSize": 18,
-                                  "fontWeight": "500"
+                                  "fontFamily": "Inter",
+                                  "fontSize": 16,
+                                  "fontWeight": "normal"
                                 },
                                 {
                                   "type": "text",
@@ -3181,8 +3181,8 @@
                       "name": "dDoc1Title",
                       "fill": "$text-primary",
                       "content": "Canada Passport",
-                      "fontFamily": "Cormorant Garamond",
-                      "fontSize": 18,
+                      "fontFamily": "Inter",
+                      "fontSize": 14,
                       "fontWeight": "500"
                     },
                     {
@@ -3374,8 +3374,8 @@
                       "name": "dDoc2Title",
                       "fill": "$text-primary",
                       "content": "Driver's License",
-                      "fontFamily": "Cormorant Garamond",
-                      "fontSize": 18,
+                      "fontFamily": "Inter",
+                      "fontSize": 14,
                       "fontWeight": "500"
                     },
                     {
@@ -3567,8 +3567,8 @@
                       "name": "dDoc3Title",
                       "fill": "$text-primary",
                       "content": "Health Card",
-                      "fontFamily": "Cormorant Garamond",
-                      "fontSize": 18,
+                      "fontFamily": "Inter",
+                      "fontSize": 14,
                       "fontWeight": "500"
                     },
                     {
@@ -3740,8 +3740,8 @@
                       "name": "dDoc4Title",
                       "fill": "$text-primary",
                       "content": "Vaccination Record",
-                      "fontFamily": "Cormorant Garamond",
-                      "fontSize": 18,
+                      "fontFamily": "Inter",
+                      "fontSize": 14,
                       "fontWeight": "500"
                     },
                     {
@@ -6645,8 +6645,8 @@
                       "name": "dDoc1Title",
                       "fill": "$text-primary",
                       "content": "Canada Passport",
-                      "fontFamily": "Cormorant Garamond",
-                      "fontSize": 18,
+                      "fontFamily": "Inter",
+                      "fontSize": 14,
                       "fontWeight": "500"
                     },
                     {
@@ -6838,8 +6838,8 @@
                       "name": "dDoc2Title",
                       "fill": "$text-primary",
                       "content": "Driver's License",
-                      "fontFamily": "Cormorant Garamond",
-                      "fontSize": 18,
+                      "fontFamily": "Inter",
+                      "fontSize": 14,
                       "fontWeight": "500"
                     },
                     {
@@ -7031,8 +7031,8 @@
                       "name": "dDoc3Title",
                       "fill": "$text-primary",
                       "content": "Health Card",
-                      "fontFamily": "Cormorant Garamond",
-                      "fontSize": 18,
+                      "fontFamily": "Inter",
+                      "fontSize": 14,
                       "fontWeight": "500"
                     },
                     {
@@ -7204,8 +7204,8 @@
                       "name": "dDoc4Title",
                       "fill": "$text-primary",
                       "content": "Vaccination Record",
-                      "fontFamily": "Cormorant Garamond",
-                      "fontSize": 18,
+                      "fontFamily": "Inter",
+                      "fontSize": 14,
                       "fontWeight": "500"
                     },
                     {
@@ -7504,8 +7504,8 @@
                       "name": "tTitle1",
                       "fill": "$text-primary",
                       "content": "Rental Agreement",
-                      "fontFamily": "Cormorant Garamond",
-                      "fontSize": 18,
+                      "fontFamily": "Inter",
+                      "fontSize": 14,
                       "fontWeight": "500"
                     },
                     {
@@ -7766,8 +7766,8 @@
                       "name": "tTitle2",
                       "fill": "$text-primary",
                       "content": "Hotel Booking",
-                      "fontFamily": "Cormorant Garamond",
-                      "fontSize": 18,
+                      "fontFamily": "Inter",
+                      "fontSize": 14,
                       "fontWeight": "500"
                     },
                     {
@@ -8670,8 +8670,8 @@
                           "name": "dDoc1Title",
                           "fill": "$text-primary",
                           "content": "Canada Passport",
-                          "fontFamily": "Cormorant Garamond",
-                          "fontSize": 18,
+                          "fontFamily": "Inter",
+                          "fontSize": 14,
                           "fontWeight": "500"
                         },
                         {
@@ -8863,8 +8863,8 @@
                           "name": "dDoc2Title",
                           "fill": "$text-primary",
                           "content": "Driver's License",
-                          "fontFamily": "Cormorant Garamond",
-                          "fontSize": 18,
+                          "fontFamily": "Inter",
+                          "fontSize": 14,
                           "fontWeight": "500"
                         },
                         {
@@ -9056,8 +9056,8 @@
                           "name": "dDoc3Title",
                           "fill": "$text-primary",
                           "content": "Health Card",
-                          "fontFamily": "Cormorant Garamond",
-                          "fontSize": 18,
+                          "fontFamily": "Inter",
+                          "fontSize": 14,
                           "fontWeight": "500"
                         },
                         {
@@ -9229,8 +9229,8 @@
                           "name": "dDoc4Title",
                           "fill": "$text-primary",
                           "content": "Vaccination Record",
-                          "fontFamily": "Cormorant Garamond",
-                          "fontSize": 18,
+                          "fontFamily": "Inter",
+                          "fontSize": 14,
                           "fontWeight": "500"
                         },
                         {
@@ -9529,8 +9529,8 @@
                           "name": "tTitle1",
                           "fill": "$text-primary",
                           "content": "Rental Agreement",
-                          "fontFamily": "Cormorant Garamond",
-                          "fontSize": 18,
+                          "fontFamily": "Inter",
+                          "fontSize": 14,
                           "fontWeight": "500"
                         },
                         {
@@ -9791,8 +9791,8 @@
                           "name": "tTitle2",
                           "fill": "$text-primary",
                           "content": "Hotel Booking",
-                          "fontFamily": "Cormorant Garamond",
-                          "fontSize": 18,
+                          "fontFamily": "Inter",
+                          "fontSize": 14,
                           "fontWeight": "500"
                         },
                         {
@@ -10437,8 +10437,8 @@
                   "name": "hdrTitle",
                   "fill": "$text-primary",
                   "content": "Settings",
-                  "fontFamily": "Cormorant Garamond",
-                  "fontSize": 22,
+                  "fontFamily": "Inter",
+                  "fontSize": 18,
                   "fontWeight": "600"
                 },
                 {
@@ -11189,8 +11189,8 @@
                   "name": "hdrTitle",
                   "fill": "$text-primary",
                   "content": "Settings",
-                  "fontFamily": "Cormorant Garamond",
-                  "fontSize": 22,
+                  "fontFamily": "Inter",
+                  "fontSize": 18,
                   "fontWeight": "600"
                 },
                 {
@@ -12149,9 +12149,9 @@
                           "fill": "$text-primary",
                           "content": "Canada Passport",
                           "lineHeight": 1.2,
-                          "fontFamily": "Cormorant Garamond",
-                          "fontSize": 20,
-                          "fontWeight": "600"
+                          "fontFamily": "Inter",
+                          "fontSize": 16,
+                          "fontWeight": "500"
                         },
                         {
                           "type": "text",
@@ -12212,9 +12212,9 @@
                           "fill": "$text-primary",
                           "content": "Driver's License",
                           "lineHeight": 1.2,
-                          "fontFamily": "Cormorant Garamond",
-                          "fontSize": 20,
-                          "fontWeight": "600"
+                          "fontFamily": "Inter",
+                          "fontSize": 16,
+                          "fontWeight": "500"
                         },
                         {
                           "type": "text",
@@ -12275,9 +12275,9 @@
                           "fill": "$text-primary",
                           "content": "Health Card",
                           "lineHeight": 1.2,
-                          "fontFamily": "Cormorant Garamond",
-                          "fontSize": 20,
-                          "fontWeight": "600"
+                          "fontFamily": "Inter",
+                          "fontSize": 16,
+                          "fontWeight": "500"
                         },
                         {
                           "type": "text",
@@ -12337,9 +12337,9 @@
                           "fill": "$text-primary",
                           "content": "Vaccination Record",
                           "lineHeight": 1.2,
-                          "fontFamily": "Cormorant Garamond",
-                          "fontSize": 20,
-                          "fontWeight": "600"
+                          "fontFamily": "Inter",
+                          "fontSize": 16,
+                          "fontWeight": "500"
                         },
                         {
                           "type": "text",
@@ -12399,9 +12399,9 @@
                           "fill": "$text-primary",
                           "content": "Bank Statement",
                           "lineHeight": 1.2,
-                          "fontFamily": "Cormorant Garamond",
-                          "fontSize": 20,
-                          "fontWeight": "600"
+                          "fontFamily": "Inter",
+                          "fontSize": 16,
+                          "fontWeight": "500"
                         },
                         {
                           "type": "text",
@@ -15336,9 +15336,9 @@
                   "id": "PNtNz",
                   "fill": "$text-primary",
                   "content": "Delete Document?",
-                  "fontFamily": "Cormorant Garamond",
-                  "fontSize": 24,
-                  "fontWeight": "normal"
+                  "fontFamily": "Inter",
+                  "fontSize": 20,
+                  "fontWeight": "600"
                 },
                 {
                   "type": "text",
@@ -16603,8 +16603,8 @@
                               "id": "lWhHX",
                               "name": "card1HighBefore",
                               "fill": "$text-primary",
-                              "fontFamily": "Cormorant Garamond",
-                              "fontSize": 20,
+                              "fontFamily": "Inter",
+                              "fontSize": 16,
                               "fontWeight": "500"
                             },
                             {
@@ -16613,8 +16613,8 @@
                               "name": "card1HighMatch",
                               "fill": "$accent-primary",
                               "content": "Pass",
-                              "fontFamily": "Cormorant Garamond",
-                              "fontSize": 20,
+                              "fontFamily": "Inter",
+                              "fontSize": 16,
                               "fontWeight": "500"
                             },
                             {
@@ -16623,8 +16623,8 @@
                               "name": "card1HighAfter",
                               "fill": "$text-primary",
                               "content": "port",
-                              "fontFamily": "Cormorant Garamond",
-                              "fontSize": 20,
+                              "fontFamily": "Inter",
+                              "fontSize": 16,
                               "fontWeight": "500"
                             }
                           ]
@@ -16722,8 +16722,8 @@
                               "name": "tp1",
                               "fill": "$text-primary",
                               "content": "Travel ",
-                              "fontFamily": "Cormorant Garamond",
-                              "fontSize": 20,
+                              "fontFamily": "Inter",
+                              "fontSize": 16,
                               "fontWeight": "500"
                             },
                             {
@@ -16732,8 +16732,8 @@
                               "name": "tp2",
                               "fill": "$accent-primary",
                               "content": "Pass",
-                              "fontFamily": "Cormorant Garamond",
-                              "fontSize": 20,
+                              "fontFamily": "Inter",
+                              "fontSize": 16,
                               "fontWeight": "500"
                             }
                           ]
@@ -17567,7 +17567,7 @@
                       "name": "stat1num",
                       "fill": "$accent-secondary",
                       "content": "5",
-                      "fontFamily": "Cormorant Garamond",
+                      "fontFamily": "Inter",
                       "fontSize": 28,
                       "fontWeight": "600"
                     },
@@ -17602,7 +17602,7 @@
                       "name": "stat2num",
                       "fill": "$text-secondary",
                       "content": "1",
-                      "fontFamily": "Cormorant Garamond",
+                      "fontFamily": "Inter",
                       "fontSize": 28,
                       "fontWeight": "600"
                     },
@@ -17637,7 +17637,7 @@
                       "name": "stat3num",
                       "fill": "$text-primary",
                       "content": "6",
-                      "fontFamily": "Cormorant Garamond",
+                      "fontFamily": "Inter",
                       "fontSize": 28,
                       "fontWeight": "600"
                     },
@@ -18841,8 +18841,8 @@
                           "name": "card1Title",
                           "fill": "$text-primary",
                           "content": "Canada Passport",
-                          "fontFamily": "Cormorant Garamond",
-                          "fontSize": 20,
+                          "fontFamily": "Inter",
+                          "fontSize": 16,
                           "fontWeight": "500"
                         },
                         {
@@ -18944,8 +18944,8 @@
                           "name": "card2Title",
                           "fill": "$text-primary",
                           "content": "Driver's License",
-                          "fontFamily": "Cormorant Garamond",
-                          "fontSize": 20,
+                          "fontFamily": "Inter",
+                          "fontSize": 16,
                           "fontWeight": "500"
                         },
                         {
@@ -19047,8 +19047,8 @@
                           "name": "card3Title",
                           "fill": "$text-primary",
                           "content": "Health Card",
-                          "fontFamily": "Cormorant Garamond",
-                          "fontSize": 20,
+                          "fontFamily": "Inter",
+                          "fontSize": 16,
                           "fontWeight": "500"
                         },
                         {
@@ -19150,8 +19150,8 @@
                           "name": "card4Title",
                           "fill": "$text-primary",
                           "content": "Vaccination Record",
-                          "fontFamily": "Cormorant Garamond",
-                          "fontSize": 20,
+                          "fontFamily": "Inter",
+                          "fontSize": 16,
                           "fontWeight": "500"
                         },
                         {
@@ -19253,8 +19253,8 @@
                           "name": "card5Title",
                           "fill": "$text-primary",
                           "content": "Bank Statement",
-                          "fontFamily": "Cormorant Garamond",
-                          "fontSize": 20,
+                          "fontFamily": "Inter",
+                          "fontSize": 16,
                           "fontWeight": "500"
                         },
                         {
@@ -20412,9 +20412,9 @@
                               "name": "f1Value",
                               "fill": "$text-primary",
                               "content": "S9891919",
-                              "fontFamily": "Cormorant Garamond",
-                              "fontSize": 18,
-                              "fontWeight": "500"
+                              "fontFamily": "Inter",
+                              "fontSize": 14,
+                              "fontWeight": "normal"
                             }
                           ]
                         },
@@ -20491,9 +20491,9 @@
                               "name": "f2Value",
                               "fill": "$text-primary",
                               "content": "27/03/2029",
-                              "fontFamily": "Cormorant Garamond",
-                              "fontSize": 18,
-                              "fontWeight": "500"
+                              "fontFamily": "Inter",
+                              "fontSize": 14,
+                              "fontWeight": "normal"
                             }
                           ]
                         },
@@ -20570,9 +20570,9 @@
                               "name": "f3Value",
                               "fill": "$text-primary",
                               "content": "15/04/2019",
-                              "fontFamily": "Cormorant Garamond",
-                              "fontSize": 18,
-                              "fontWeight": "500"
+                              "fontFamily": "Inter",
+                              "fontSize": 14,
+                              "fontWeight": "normal"
                             }
                           ]
                         },
@@ -21249,9 +21249,9 @@
                               "name": "f1Value",
                               "fill": "$text-primary",
                               "content": "S9891919",
-                              "fontFamily": "Cormorant Garamond",
-                              "fontSize": 18,
-                              "fontWeight": "500"
+                              "fontFamily": "Inter",
+                              "fontSize": 14,
+                              "fontWeight": "normal"
                             }
                           ]
                         },
@@ -21329,9 +21329,9 @@
                               "name": "f2Value",
                               "fill": "$text-primary",
                               "content": "27/03/2029",
-                              "fontFamily": "Cormorant Garamond",
-                              "fontSize": 18,
-                              "fontWeight": "500"
+                              "fontFamily": "Inter",
+                              "fontSize": 14,
+                              "fontWeight": "normal"
                             }
                           ]
                         },
@@ -21408,9 +21408,9 @@
                               "name": "f3Value",
                               "fill": "$text-primary",
                               "content": "15/04/2019",
-                              "fontFamily": "Cormorant Garamond",
-                              "fontSize": 18,
-                              "fontWeight": "500"
+                              "fontFamily": "Inter",
+                              "fontSize": 14,
+                              "fontWeight": "normal"
                             }
                           ]
                         },

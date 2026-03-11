@@ -230,8 +230,7 @@ const styles = StyleSheet.create({
   fieldLeft: { flex: 1, gap: 4 },
   fieldLabel: { fontSize: 11, fontWeight: '500', color: colors.textSecondary },
   fieldValue: {
-    fontFamily: 'CormorantGaramond-Medium',
-    fontSize: 20,
+    fontSize: 16,
     color: colors.textPrimary,
   },
   divider: { height: 1, backgroundColor: colors.borderDivider, marginHorizontal: 24 },

@@ -1672,8 +1672,8 @@ export default function App() {
                         {/* Document info */}
                         <div className="flex-1 min-w-0 flex flex-col gap-[3px]">
                           <span
-                            className="text-[18px] font-medium text-[#F5F5F0] leading-tight truncate"
-                            style={{ fontFamily: "'Cormorant Garamond', Georgia, serif" }}
+                            className="text-[14px] font-medium text-[#F5F5F0] leading-tight truncate"
+                            style={{ fontFamily: "'Inter', -apple-system, sans-serif" }}
                           >
                             {doc.type}
                           </span>

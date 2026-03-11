@@ -487,8 +487,7 @@ const styles = StyleSheet.create({
   settingIcon: { width: 24 },
   settingInfo: { flex: 1, gap: 2 },
   settingLabel: {
-    fontFamily: 'CormorantGaramond-Medium',
-    fontSize: 18,
+    fontSize: 16,
     color: colors.textPrimary,
   },
   settingSubtitle: { fontSize: 11, color: colors.textSecondary },
@@ -596,8 +595,8 @@ const styles = StyleSheet.create({
     gap: 4,
   },
   statNumber: {
-    fontFamily: 'CormorantGaramond-SemiBold',
     fontSize: 28,
+    fontWeight: '600',
     color: colors.textPrimary,
   },
   statLabel: { fontSize: 11, fontWeight: '500', color: colors.textSecondary },
