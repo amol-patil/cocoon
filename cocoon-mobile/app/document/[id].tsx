@@ -138,12 +138,22 @@ export default function DocumentDetailScreen() {
           ))}
         </View>
 
-        {/* Copy All */}
+        {/* Copy All & Share */}
         {fieldEntries.length > 0 && (
-          <TouchableOpacity style={styles.copyAllBtn} onPress={copyAll} activeOpacity={0.8}>
-            <Feather name="clipboard" size={16} color={colors.bgPrimary} />
-            <Text style={styles.copyAllText}>Copy All Fields</Text>
-          </TouchableOpacity>
+          <View style={styles.actionButtons}>
+            <TouchableOpacity style={styles.copyAllBtn} onPress={copyAll} activeOpacity={0.8}>
+              <Feather name="clipboard" size={16} color={colors.bgPrimary} />
+              <Text style={styles.copyAllText}>Copy All Fields</Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={styles.shareBtn}
+              onPress={() => router.push({ pathname: '/document/share', params: { id: doc.id } })}
+              activeOpacity={0.8}
+            >
+              <Feather name="share" size={16} color={colors.accentPrimary} />
+              <Text style={styles.shareBtnText}>Share</Text>
+            </TouchableOpacity>
+          </View>
         )}
 
         {/* Linked file */}
@@ -247,6 +257,7 @@ const styles = StyleSheet.create({
     backgroundColor: colors.accentAlpha14,
     borderColor: colors.accentPrimary,
   },
+  actionButtons: { gap: 12 },
   copyAllBtn: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -257,6 +268,17 @@ const styles = StyleSheet.create({
     backgroundColor: colors.accentPrimary,
   },
   copyAllText: { fontSize: 14, fontWeight: '600', color: colors.bgPrimary },
+  shareBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+    height: 48,
+    borderRadius: 24,
+    borderWidth: 1,
+    borderColor: colors.borderPrimary,
+  },
+  shareBtnText: { fontSize: 14, fontWeight: '600', color: colors.accentPrimary },
   linkedSection: { gap: 8 },
   linkedSectionLabel: {
     fontSize: 11,

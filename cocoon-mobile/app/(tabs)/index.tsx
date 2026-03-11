@@ -3,7 +3,6 @@ import {
   View, Text, FlatList, StyleSheet, SafeAreaView, TouchableOpacity, ScrollView,
 } from 'react-native';
 import { router } from 'expo-router';
-import { Feather } from '@expo/vector-icons';
 import { useDocuments } from '../../src/hooks/useDocuments';
 import { useSearch } from '../../src/hooks/useSearch';
 import { SearchBar } from '../../src/components/SearchBar';
@@ -27,13 +26,7 @@ export default function SearchTab() {
       {/* Header */}
       <View style={styles.header}>
         <View style={styles.headerTop}>
-          <View>
-            <Text style={styles.welcome}>Welcome back</Text>
-            <Text style={styles.appName}>Cocoon</Text>
-          </View>
-          <TouchableOpacity style={styles.bellBtn} activeOpacity={0.7}>
-            <Feather name="bell" size={20} color={colors.textSecondary} />
-          </TouchableOpacity>
+          <Text style={styles.appName}>Cocoon</Text>
         </View>
 
         {/* Search bar */}
@@ -119,26 +112,11 @@ const styles = StyleSheet.create({
     alignItems: 'flex-start',
     justifyContent: 'space-between',
   },
-  welcome: {
-    fontSize: 14,
-    fontWeight: '500',
-    color: colors.textSecondary,
-  },
   appName: {
     fontFamily: 'CormorantGaramond-Regular',
     fontSize: 42,
     lineHeight: 42,
     color: colors.textPrimary,
-  },
-  bellBtn: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
-    borderWidth: 1,
-    borderColor: colors.borderPrimary,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginTop: 4,
   },
   chipScroll: { marginHorizontal: -28, paddingHorizontal: 28, paddingBottom: 12 },
   chip: {

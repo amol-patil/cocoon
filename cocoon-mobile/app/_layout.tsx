@@ -109,6 +109,8 @@ function AppShell() {
       >
         <Stack.Screen name="(tabs)" />
         <Stack.Screen name="document/[id]" />
+        <Stack.Screen name="document/share" />
+        <Stack.Screen name="document/receive" />
         <Stack.Screen name="document/new" options={{ presentation: 'modal', animation: 'slide_from_bottom' }} />
         <Stack.Screen name="document/edit/[id]" options={{ presentation: 'modal', animation: 'slide_from_bottom' }} />
         <Stack.Screen name="+not-found" />
