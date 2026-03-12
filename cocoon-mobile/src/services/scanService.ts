@@ -12,7 +12,7 @@ import { initLlama, LlamaContext } from 'llama.rn';
 
 const MODEL_FILENAME = 'qwen2.5-1.5b-instruct-q4_k_m.gguf';
 const MODEL_URL =
-  'https://huggingface.co/Qwen/Qwen2.5-1.5B-Instruct-GGUF/resolve/main/qwen2.5-1.5b-instruct-q4_k_m.gguf';
+  'https://documentai.cocoonvault.app/qwen2.5-1.5b-instruct-q4_k_m.gguf';
 const MODEL_DIR = FileSystem.documentDirectory + 'models/';
 const MODEL_PATH = MODEL_DIR + MODEL_FILENAME;
 
