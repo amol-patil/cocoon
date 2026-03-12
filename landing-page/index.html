@@ -54,7 +54,7 @@
                 Your documents,<br /><span class="text-gold">always within reach</span>
             </h1>
             <p class="text-lg text-gray-400 max-w-xl mx-auto mb-9">
-                Passport numbers, license details, insurance IDs — find and copy anything in seconds. Encrypted, local-only, and private.
+                Passport numbers, license details, insurance IDs — find and copy anything in seconds. <span class="text-gray-100" style="text-decoration: underline; text-decoration-color: rgba(201,169,98,0.5); text-underline-offset: 2px; text-decoration-thickness: 6px; text-decoration-skip-ink: none;">No accounts</span>. <span class="text-gray-100" style="text-decoration: underline; text-decoration-color: rgba(201,169,98,0.5); text-underline-offset: 2px; text-decoration-thickness: 6px; text-decoration-skip-ink: none;">No servers</span>. <span class="text-gray-100" style="text-decoration: underline; text-decoration-color: rgba(201,169,98,0.5); text-underline-offset: 2px; text-decoration-thickness: 6px; text-decoration-skip-ink: none;">No internet required</span>. Just your data, on your device.
             </p>
             <div class="flex gap-4 justify-center flex-wrap">
                 <a href="https://github.com/amol-patil/cocoon/releases/latest/download/Cocoon.Installer.dmg" class="inline-flex items-center gap-2 bg-gold text-[#1A1A1C] px-7 py-3 rounded-full text-sm font-semibold hover:opacity-90 transition-opacity no-underline">Download for macOS</a>
@@ -113,14 +113,37 @@
         </section>
 
         <!-- Security -->
-        <section class="py-20 text-center" id="security">
-            <h2 class="font-serif text-4xl font-normal mb-4">Built for privacy</h2>
-            <p class="text-gray-400 max-w-md mx-auto mb-8">Your data never leaves your devices. No accounts, no cloud, no tracking.</p>
-            <div class="flex gap-3 justify-center flex-wrap">
+        <section class="py-20" id="security">
+            <h2 class="font-serif text-4xl font-normal text-center mb-4">Radically private</h2>
+            <p class="text-gray-400 max-w-lg mx-auto text-center mb-12">Most apps ask you to trust their servers. Cocoon has <span class="text-gray-100" style="text-decoration: underline; text-decoration-color: rgba(201,169,98,0.5); text-underline-offset: 2px; text-decoration-thickness: 6px; text-decoration-skip-ink: none;">no servers</span>. <span class="text-gray-100" style="text-decoration: underline; text-decoration-color: rgba(201,169,98,0.5); text-underline-offset: 2px; text-decoration-thickness: 6px; text-decoration-skip-ink: none;">No backend</span>. <span class="text-gray-100" style="text-decoration: underline; text-decoration-color: rgba(201,169,98,0.5); text-underline-offset: 2px; text-decoration-thickness: 6px; text-decoration-skip-ink: none;">No accounts</span>. Not even a sign-in screen.</p>
+
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-5 max-w-3xl mx-auto">
+                <div class="bg-surface border border-white/[0.08] rounded-2xl p-7">
+                    <div class="w-11 h-11 rounded-xl bg-gold-dim flex items-center justify-center text-xl mb-4">🚫</div>
+                    <h3 class="text-base font-semibold mb-2">No accounts, ever</h3>
+                    <p class="text-sm text-gray-400 leading-relaxed">There's no sign-up, no login, no email collection. Open the app and start using it. We don't know who you are, and we want to keep it that way.</p>
+                </div>
+                <div class="bg-surface border border-white/[0.08] rounded-2xl p-7">
+                    <div class="w-11 h-11 rounded-xl bg-gold-dim flex items-center justify-center text-xl mb-4">📡</div>
+                    <h3 class="text-base font-semibold mb-2">Works without internet</h3>
+                    <p class="text-sm text-gray-400 leading-relaxed">Turn off Wi-Fi and Cocoon works exactly the same. That's not a feature — it's proof that your data never leaves your device.</p>
+                </div>
+                <div class="bg-surface border border-white/[0.08] rounded-2xl p-7">
+                    <div class="w-11 h-11 rounded-xl bg-gold-dim flex items-center justify-center text-xl mb-4">🔒</div>
+                    <h3 class="text-base font-semibold mb-2">Zero cloud sync</h3>
+                    <p class="text-sm text-gray-400 leading-relaxed">Want your data on another device? You manually export a password-protected encrypted file and import it yourself. There is no other way — by design.</p>
+                </div>
+                <div class="bg-surface border border-white/[0.08] rounded-2xl p-7">
+                    <div class="w-11 h-11 rounded-xl bg-gold-dim flex items-center justify-center text-xl mb-4">🖥️</div>
+                    <h3 class="text-base font-semibold mb-2">No servers, no backend</h3>
+                    <p class="text-sm text-gray-400 leading-relaxed">Cocoon is a local app, full stop. There are no servers to breach, no APIs to exploit, no databases to leak. Your data exists only on the device you put it on.</p>
+                </div>
+            </div>
+
+            <div class="flex gap-3 justify-center flex-wrap mt-10">
                 <div class="flex items-center gap-2.5 bg-surface border border-white/[0.08] rounded-xl px-5 py-3.5 text-sm"><span class="text-lg">🔐</span> Encrypted at rest</div>
                 <div class="flex items-center gap-2.5 bg-surface border border-white/[0.08] rounded-xl px-5 py-3.5 text-sm"><span class="text-lg">🧬</span> Face ID / Touch ID</div>
                 <div class="flex items-center gap-2.5 bg-surface border border-white/[0.08] rounded-xl px-5 py-3.5 text-sm"><span class="text-lg">📦</span> AES-256-GCM exports</div>
-                <div class="flex items-center gap-2.5 bg-surface border border-white/[0.08] rounded-xl px-5 py-3.5 text-sm"><span class="text-lg">🚫</span> No cloud sync</div>
                 <div class="flex items-center gap-2.5 bg-surface border border-white/[0.08] rounded-xl px-5 py-3.5 text-sm"><span class="text-lg">🧹</span> Clipboard auto-clear</div>
             </div>
         </section>
