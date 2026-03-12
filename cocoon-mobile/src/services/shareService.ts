@@ -17,7 +17,7 @@ import { CocoonDocument, CocoonBackup } from '../shared/types';
 import ViewShot from 'react-native-view-shot';
 
 const PBKDF2_ITERATIONS = 600_000;
-const COCOON_DOWNLOAD_URL = 'https://cocoonapp.com/download';
+const COCOON_DOWNLOAD_URL = 'https://cocoonvault.app/download';
 const SHARE_MESSAGE = `Shared securely from Cocoon — ${COCOON_DOWNLOAD_URL}`;
 
 // --- Base64 helpers ---
